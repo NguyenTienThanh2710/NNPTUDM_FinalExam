@@ -22,7 +22,7 @@ const ProductList = () => {
 
         const fetchWishlist = async () => {
             const token = localStorage.getItem('token');
-            if (token) {
+            if (token && token !== 'null' && token !== 'undefined') {
                 try {
                     const res = await wishlistService.getWishlist();
                     setWishlistedIds(res.data.map(p => p._id));
@@ -41,7 +41,8 @@ const ProductList = () => {
         e.stopPropagation();
         
         const token = localStorage.getItem('token');
-        if (!token) {
+        if (!token || token === 'null' || token === 'undefined') {
+            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
             navigate('/login');
             return;
         }
@@ -156,6 +157,7 @@ const ProductList = () => {
                                         {/* Wishlist Button */}
                                         <button 
                                             onClick={(e) => handleToggleWishlist(e, product._id)}
+                                            title={(!localStorage.getItem('token') || localStorage.getItem('token') === 'null') ? "Đăng nhập để yêu thích" : ""}
                                             className="absolute top-4 right-4 z-10 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 active:scale-95"
                                         >
                                             <span 

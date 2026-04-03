@@ -24,7 +24,7 @@ const ProductDetail = () => {
 
         const fetchWishlistStatus = async () => {
             const token = localStorage.getItem('token');
-            if (token) {
+            if (token && token !== 'null' && token !== 'undefined') {
                 try {
                     const res = await wishlistService.checkInWishlist(id);
                     setIsInWishlist(res.isInWishlist);
@@ -59,7 +59,8 @@ const ProductDetail = () => {
 
     const handleToggleWishlist = async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
+        if (!token || token === 'null' || token === 'undefined') {
+            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
             navigate('/login');
             return;
         }
@@ -186,6 +187,7 @@ const ProductDetail = () => {
 
                         <button 
                             onClick={handleToggleWishlist}
+                            title={(!localStorage.getItem('token') || localStorage.getItem('token') === 'null') ? "Đăng nhập để yêu thích" : ""}
                             className={`py-5 px-8 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 border-2 shadow-sm ${isInWishlist ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800' : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50'}`}
                         >
                             <span 
