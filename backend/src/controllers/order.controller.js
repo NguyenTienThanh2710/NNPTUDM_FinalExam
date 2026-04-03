@@ -4,13 +4,20 @@ const Cart = require('../models/cart.model');
 const CartItem = require('../models/cartItem.model');
 const Product = require('../models/product.model');
 
+<<<<<<< HEAD
 // @desc    Create new order from cart
+=======
+// @desc    Create new order
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 // @route   POST /api/orders
 // @access  Private
 const createOrder = async (req, res) => {
     try {
+<<<<<<< HEAD
         const { payment_method = 'cod', shipping_address = '', recipient_name = '', recipient_email = '', recipient_phone = '' } = req.body;
 
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
         const cart = await Cart.findOne({ user_id: req.user.id });
 
         if (!cart) {
@@ -32,6 +39,7 @@ const createOrder = async (req, res) => {
         const order = new Order({
             user_id: req.user.id,
             total_price: totalPrice,
+<<<<<<< HEAD
             status: 'pending',
             payment_method,
             payment_status: 'pending',
@@ -39,6 +47,9 @@ const createOrder = async (req, res) => {
             recipient_name,
             recipient_email,
             recipient_phone
+=======
+            status: 'pending'
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
         });
 
         const createdOrder = await order.save();
@@ -103,7 +114,11 @@ const getOrderById = async (req, res) => {
         }
 
         // Ensure user owns this order OR is admin
+<<<<<<< HEAD
         if (order.user_id.toString() !== req.user.id && req.user.role_id?.name !== 'ADMIN') {
+=======
+        if (order.user_id.toString() !== req.user.id && req.user.role !== 'ADMIN') {
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
             return res.status(401).json({ message: 'Not authorized' });
         }
 
@@ -142,6 +157,7 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 // @desc    Update payment status
 // @route   PUT /api/orders/:id/payment
 // @access  Private/Admin
@@ -172,4 +188,12 @@ module.exports = {
     getOrderById,
     updateOrderStatus,
     updatePaymentStatus
+=======
+module.exports = {
+    createOrder,
+    getOrders,
+    getOrderById,
+    updateOrderStatus,
+    getAllOrders
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 };

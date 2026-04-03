@@ -15,7 +15,11 @@ const ProductDetail = () => {
             try {
                 const res = await api.get(`/products/${id}`);
                 setProduct(res.data);
+<<<<<<< HEAD
             } catch (err) {
+=======
+            } catch (_err) {
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
                 setError('Không thể lấy thông tin sản phẩm');
             }
         };

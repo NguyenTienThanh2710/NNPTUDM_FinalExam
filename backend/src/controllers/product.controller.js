@@ -33,11 +33,16 @@ const createProduct = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 // @desc    Get all products with advanced filtering
+=======
+// @desc    Get all products
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
     try {
+<<<<<<< HEAD
         const { featured, limit, sort, keyword, brands, minPrice, maxPrice } = req.query;
         let query = {};
 
@@ -93,6 +98,11 @@ const getProducts = async (req, res) => {
         res.json(products);
     } catch (error) {
         console.error(error);
+=======
+        const products = await Product.find({}).populate('category_id', 'name').populate('brand_id', 'name');
+        res.json(products);
+    } catch (error) {
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -158,7 +168,11 @@ const deleteProduct = async (req, res) => {
         const product = await Product.findById(req.params.id);
 
         if (product) {
+<<<<<<< HEAD
             await Product.findByIdAndDelete(req.params.id);
+=======
+            await product.remove();
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
             res.json({ message: 'Product removed' });
         } else {
             res.status(404).json({ message: 'Product not found' });

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina Mobile | Precision Luminescence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1a1c1d",
+                        "tertiary": "#952200",
+                        "primary-fixed-dim": "#b7c4ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#dfe3ff",
+                        "primary": "#003ec7",
+                        "inverse-primary": "#b7c4ff",
+                        "on-error-container": "#93000a",
+                        "background": "#f9f9fb",
+                        "outline-variant": "#c3c5d9",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#636264",
+                        "inverse-on-surface": "#f0f0f2",
+                        "surface-container": "#eeeef0",
+                        "on-surface-variant": "#434656",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "outline": "#737688",
+                        "on-secondary-fixed-variant": "#474649",
+                        "on-tertiary-container": "#ffddd5",
+                        "surface": "#f9f9fb",
+                        "on-primary-fixed-variant": "#0038b6",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e2e2e4",
+                        "on-background": "#1a1c1d",
+                        "surface-container-high": "#e8e8ea",
+                        "secondary-container": "#e2dfe1",
+                        "on-tertiary-fixed-variant": "#891e00",
+                        "on-primary-fixed": "#001452",
+                        "inverse-surface": "#2f3132",
+                        "surface-tint": "#004ced",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "primary-container": "#0052ff",
+                        "tertiary-container": "#bf3003",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#5f5e60",
+                        "surface-dim": "#d9dadc",
+                        "on-tertiary-fixed": "#3c0800",
+                        "tertiary-fixed-dim": "#ffb4a1",
+                        "secondary-fixed": "#e4e2e4",
+                        "surface-container-highest": "#e2e2e4",
+                        "tertiary-fixed": "#ffdbd2",
+                        "primary-fixed": "#dde1ff",
+                        "surface-bright": "#f9f9fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f3f3f5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #003ec7 0%, #0052ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .bg-glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<a class="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 font-headline" href="#">Lumina Mobile</a>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80" href="#">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80" href="#">Shop</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80" href="#">Support</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Search devices..." type="text"/>
+</div>
+<button class="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button class="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative overflow-hidden min-h-[870px] flex items-center bg-surface-container-low">
+<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+<div class="z-10 text-center md:text-left">
+<span class="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest text-primary uppercase bg-primary-fixed rounded-full font-label">TITANIUM ARRIVAL</span>
+<h1 class="text-5xl md:text-7xl font-black tracking-tighter text-on-surface mb-6 leading-tight font-headline">
+                        iPhone 15 Pro.<br/><span class="text-gradient">Forged in Light.</span>
+</h1>
+<p class="text-lg md:text-xl text-secondary mb-10 max-w-lg leading-relaxed">
+                        The first iPhone with an aerospace‑grade titanium design, using the same alloy that spacecraft use for missions to Mars.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+<button class="px-10 py-5 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl shadow-lg transition-all hover:shadow-primary/20 active:scale-95">
+                            Buy Now
+                        </button>
+<button class="px-10 py-5 bg-surface-container-high text-on-surface font-bold rounded-xl transition-all hover:bg-surface-variant active:scale-95">
+                            Learn More
+                        </button>
+</div>
+</div>
+<div class="relative flex justify-center md:justify-end">
+<div class="absolute -top-20 -right-20 w-96 h-96 bg-primary-fixed-dim/30 rounded-full blur-[100px]"></div>
+<img alt="Flagship Phone" class="relative z-10 w-full max-w-md md:max-w-lg drop-shadow-2xl translate-x-12 translate-y-8 rotate-3 scale-110" data-alt="Modern smartphone with titanium finish floating on a minimal light grey background with soft cinematic lighting and sharp details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAho8gCR3xBVtWF_OBl918B3OBX18-IOy9rmiB6q_jXt8IWNRJRRZWQpTQpQB1wDBWGZcKby57Z8xmpCs9B7tLuOL5HXB7_zfQElaxSri-l8DbCzdlxWvV8XEfWZKxqnbyUyxvw04bkAc3_R5U5esw48ISQOxePgujYhHm6_G4c9GLGUaO02oAntPWN-1QVCxO05jfGP_vvCYxyf59Yuk_Vjlkip25Y51AiHQ5zHqmwnWj_JxzTWfSgOzjXZAWgS4XqIju8IaV22A"/>
+</div>
+</div>
+</section>
+<!-- Categories Bento -->
+<section class="py-24 max-w-7xl mx-auto px-6">
+<div class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-on-surface font-headline">Explore Collections</h2>
+<p class="text-secondary mt-2">Find the perfect ecosystem for your lifestyle.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+<!-- iPhone -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-8 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="phone_iphone">phone_iphone</span>
+<h3 class="text-xl font-bold mb-1">iPhone</h3>
+<p class="text-sm text-secondary">The world's most powerful device.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" data-icon="apple">ios</span>
+</div>
+</div>
+<!-- Samsung -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-8 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="ad_units">ad_units</span>
+<h3 class="text-xl font-bold mb-1">Samsung</h3>
+<p class="text-sm text-secondary">Innovation at your fingertips.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" data-icon="galaxy">globe</span>
+</div>
+</div>
+<!-- Oppo -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-8 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="smartphone">smartphone</span>
+<h3 class="text-xl font-bold mb-1">Oppo</h3>
+<p class="text-sm text-secondary">Capture your moments.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" data-icon="lens_blur">lens_blur</span>
+</div>
+</div>
+<!-- Accessories -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-8 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="headphones">headphones</span>
+<h3 class="text-xl font-bold mb-1">Accessories</h3>
+<p class="text-sm text-secondary">Complete your experience.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" data-icon="settings_input_hdmi">settings_input_hdmi</span>
+</div>
+</div>
+</div>
+</section>
+<!-- New Arrivals -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-7xl mx-auto px-6">
+<div class="flex justify-between items-center mb-12">
+<h2 class="text-3xl font-bold tracking-tight text-on-surface font-headline">New Arrivals</h2>
+<a class="text-primary font-bold flex items-center gap-1 hover:underline" href="#">
+                        View All <span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Product Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
+<span class="absolute top-4 left-4 z-20 bg-primary text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">-15%</span>
+<img alt="Samsung Galaxy S24" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" data-alt="Professional studio shot of a sleek violet smartphone on a minimalist white surface with soft gradient shadow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMUCjd4A_o8ZIsz9xaLlT_xCnOarxBdusT0Ztb-6RX2lD2oJ5qUQC7QQ_FqfGRhUlpVBXf-CNv3OXgcVseTZWGDKYQ_pdTY3cSgQsleJKvTszJpuIP8lSZxc2eZABlg-zT3YyhTJZHgccaosmD1SLwhqCBVYWf5OlLPMWVB9yjt4gvbwwZJK2qnUpM2s0i8fBRWRWN390x-9Df_IUgd9uVt2l02Z9M_sOEdib0DC-UL9bHZU3ekXvHXZ8mdyRS6Qf5H5aWyEUauA"/>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold text-secondary ml-1">(124)</span>
+</div>
+<h3 class="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Samsung Galaxy S24 Ultra</h3>
+<div class="flex items-center gap-3">
+<span class="text-xl font-black text-on-surface">$1,199.00</span>
+<span class="text-sm text-secondary line-through">$1,399.00</span>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
+<span class="absolute top-4 left-4 z-20 bg-error text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">HOT</span>
+<img alt="iPhone 15" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" data-alt="Close up of a blue colored high end smartphone showing off its camera lenses and metallic side buttons" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGtY34KJ-3YZdzpy2wzl9vjIUZje3yXz3XQJIF5ZkJOCUYr3_Z4QGvsmS3bWCu4fCjjP8uCycDxfGK2kmG06M8DJ8b5sN1vdA_FkhOk2-DV-T7jx98G0lRR528Uh0nQOAOr8xFdlF70mPH4ABwzSJxG6v-mXKEKyHtGwBs471gw-6qIwjVAHlSxaVnWdBMsTydbm9t3amF8wIpnNHnotFjGRMoXDpuGZ8b3dU2B1LcbwgePXHw6-43d5V5F7bUdhMUZ7wY2nta1A"/>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold text-secondary ml-1">(89)</span>
+</div>
+<h3 class="font-bold text-lg leading-tight group-hover:text-primary transition-colors">iPhone 15 Blue 128GB</h3>
+<div class="flex items-center gap-3">
+<span class="text-xl font-black text-on-surface">$799.00</span>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
+<img alt="Oppo Find X7" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" data-alt="Top-down view of a dark grey sleek smartphone resting on a black leather pad with dramatic accent lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEjGHrqvN8ZRYJvCZk1XYPf30EIApZ9TTbukU5VCJ2NhS-64kVo41IZFWls-iU559TMJIgMzLfxqAkFVofsPPQFKx1JCpsjhU8Hf7Zx6snX2YgD3Ndf7gkzqLQWXAl5f5xikdJd-6oo1rWwP1cZxt4ocbA4N__lxX9umS2kcq3HP2Unf-21iNjOb-IamCFDObsdReLGT_nHg9ckRHX0ujBqphuDBMLqtxC4bzxjEN-0THXHPgnMdtwGa9-_lnaR8ylzTp8s7PkaQ"/>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-slate-300 text-sm">star</span>
+<span class="text-[10px] font-bold text-secondary ml-1">(45)</span>
+</div>
+<h3 class="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Oppo Find X7 Pro</h3>
+<div class="flex items-center gap-3">
+<span class="text-xl font-black text-on-surface">$949.00</span>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
+<span class="absolute top-4 left-4 z-20 bg-primary text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">-20%</span>
+<img alt="Headphones" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" data-alt="Premium wireless noise-canceling headphones in black matte finish positioned elegantly on a glass table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASTI5F1N5m5bQzqXDBpPwwb15aA-JgrecnCEyGH4_1bww3KXoURJvYSTz2AzAcvcHSmhwvPdzrtCxOtitjDLm02gHxoFcoiUvWyg4n3mR3dWS_GVoSQcfoABEPIPBCD-HUlzdnfudTyTzmIsKnGpIRhB6oyH7VOuk0Z6F_knvZo4GKaChUq3tWMQlEUzbIh-QYsVoapN4Fl7cv6ozcOu-B615FAE9tpY7AO88iQqA46fQnu-RFUc2zMEwu7Lqn2aE1LskhTORUcQ"/>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-amber-400 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold text-secondary ml-1">(210)</span>
+</div>
+<h3 class="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Lumina Sonic Pro Max</h3>
+<div class="flex items-center gap-3">
+<span class="text-xl font-black text-on-surface">$299.00</span>
+<span class="text-sm text-secondary line-through">$379.00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Best Sellers (Bento-style Highlight) -->
+<section class="py-24 max-w-7xl mx-auto px-6">
+<div class="flex justify-between items-center mb-12">
+<h2 class="text-3xl font-bold tracking-tight text-on-surface font-headline">Best Sellers</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8 h-auto">
+<div class="md:col-span-8 bg-slate-900 rounded-3xl overflow-hidden relative flex flex-col justify-center p-12 text-white">
+<div class="relative z-10 max-w-sm">
+<span class="text-primary-fixed-dim text-xs font-bold tracking-widest font-label uppercase">FEATURED PICK</span>
+<h3 class="text-4xl font-black mt-4 mb-4 font-headline leading-tight">Pixel 8 Pro. <br/>Mint Edition.</h3>
+<p class="text-slate-300 mb-8">Experience Google AI in a beautiful new color. Fresh from every angle.</p>
+<button class="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold transition-all hover:bg-slate-200">Shop Mint</button>
+</div>
+<img alt="Pixel 8 Pro" class="absolute -right-20 bottom-0 w-2/3 h-full object-contain pointer-events-none opacity-80" data-alt="Google Pixel phone in mint green color shown with soft lighting and professional depth of field" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfGCA4HtcJRoRJl0_rbMganJbMQcpiRNV5K5DmfjpDyM2kSXNqGj4cL1fHdOL1AH48VjE5xP8WQkkrhkTLCg-wSvlpeLQpxvhoXOe58HYQeSmX3qZGO6wHiSi14wfkAAsbnVme8t9PJV8NeO6ksbYORh0PAJxwZr7-s1ldk_8R7MWTnEgbss4p7D6j6yiht8Sbe00ROEUcxu7wZfBDRfny89qy5tniYMHtJVwa9Eyh7eUobYX4nOLMY63gMwsPV_hBYMnlFvMSBQ"/>
+</div>
+<div class="md:col-span-4 grid grid-rows-2 gap-8">
+<div class="bg-surface-container-high rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden">
+<div>
+<h4 class="font-bold text-xl mb-1">Watch Series 9</h4>
+<p class="text-secondary text-sm">Smarter. Brighter. Mightier.</p>
+</div>
+<img alt="Smartwatch" class="w-32 self-end group-hover:scale-110 transition-transform" data-alt="Modern high-end smartwatch with a detailed screen and silicone strap on a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfTfpCqdg7UHkZmuzMYBME1W52NHXpm60WLRv5Swu3bcvqjzeyCtqEg-081FpsSaRnCsx4HeCl0Csfhk-09pkD_Xl9vK3GEIdKLZvsfT3H7JYMTm3a9FnXTPsOQOFDmC5Lqri9nBrvTFVeJQ_ZLxwv8G4m26md0WPjDvwbcvvroE-oF24LFC7r8Mka7t55hcBd4H7DLs-0oHB19A8tlsFgOlTr7pQTdLj8VvYdhFx9U5iKNsLNIRcWLhYdbv1XD8Ve7HS3OlbQQA"/>
+</div>
+<div class="bg-primary-container rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden text-white">
+<div>
+<h4 class="font-bold text-xl mb-1">Lumina Pods</h4>
+<p class="text-primary-fixed-dim text-sm">Pure silence. Pure sound.</p>
+</div>
+<img alt="Earbuds" class="w-32 self-end group-hover:scale-110 transition-transform" data-alt="Compact white wireless earbuds and their charging case displayed with high-tech lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8ykMfKSuQB3_H5VvdXD-KhiSg46Agn_8uE0BLp7Drg94m2BBa85f12zaES95t0Ndk8ebgfgS11g8KunbloEUDpdw-yrh1OZ9LEzFWpOjA4Osf0Nko1VC9vQNL8fP4iky7_XQsgw22y-a-F5_StX3ytFJipqaKLI1oPJQDdb1mDQcDU1_OvPiiVZrk5NNsFBNXnmvWL6MuYDHiO2TSUn0Y5ORcebyVRuAKdUlHLoWfdJFzuJc6LNNjTJmVuv7IKhkqpmMRKS0cmw"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter / CTA -->
+<section class="py-24 max-w-7xl mx-auto px-6">
+<div class="bg-surface-container-highest rounded-[40px] p-12 md:p-24 text-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<div class="absolute top-0 left-0 w-64 h-64 border-4 border-primary rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+<div class="absolute bottom-0 right-0 w-96 h-96 border-4 border-primary rounded-full translate-x-1/2 translate-y-1/2"></div>
+</div>
+<div class="relative z-10 max-w-2xl mx-auto">
+<h2 class="text-4xl md:text-5xl font-black text-on-surface mb-6 font-headline tracking-tight">Stay ahead of the curve.</h2>
+<p class="text-secondary mb-10 text-lg">Join our newsletter to get early access to drops, exclusive titanium-grade deals, and technical insights.</p>
+<form class="flex flex-col sm:flex-row gap-4">
+<input class="flex-grow px-6 py-4 bg-white border-none rounded-xl text-on-surface focus:ring-2 focus:ring-primary shadow-sm" placeholder="Enter your email" type="email"/>
+<button class="px-8 py-4 bg-primary text-white font-bold rounded-xl transition-all hover:bg-primary-container active:scale-95 shadow-lg shadow-primary/20">
+                            Subscribe
+                        </button>
+</form>
+<p class="text-xs text-slate-400 mt-6 font-medium">By subscribing, you agree to our Privacy Policy.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 bg-slate-50 dark:bg-slate-950">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-8 py-16 max-w-7xl mx-auto">
+<div class="space-y-6">
+<h4 class="text-lg font-bold text-slate-900 dark:text-slate-100 font-headline">Lumina Mobile</h4>
+<p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">Precision-engineered digital storefront for the next generation of mobile technology.</p>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-on-surface uppercase text-xs tracking-widest">Shop</h5>
+<ul class="space-y-4">
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">iPhone</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Samsung</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Oppo</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Pixel</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-on-surface uppercase text-xs tracking-widest">Company</h5>
+<ul class="space-y-4">
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Warranty</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Privacy Policy</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Contact Us</a></li>
+<li><a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm" href="#">Newsletter</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-on-surface uppercase text-xs tracking-widest">Social</h5>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="language">language</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="share">share</span>
+</a>
+</div>
+</div>
+</div>
+<div class="border-t border-slate-200 dark:border-slate-800 py-8 px-8 text-center">
+<p class="text-slate-500 dark:text-slate-400 text-sm">© 2024 Lumina Mobile. Precision Luminescence.</p>
+</div>
+</footer>
+</body></html>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
+<<<<<<< HEAD
 const ORDER_STATUS_CONFIG = {
     pending: { label: 'Chờ thanh toán', color: 'text-amber-700', bg: 'bg-amber-100', icon: 'schedule' },
     processing: { label: 'Đang chuẩn bị', color: 'text-blue-700', bg: 'bg-blue-100', icon: 'inventory_2' },
@@ -10,11 +11,16 @@ const ORDER_STATUS_CONFIG = {
     cancelled: { label: 'Đã hủy', color: 'text-red-700', bg: 'bg-red-100', icon: 'cancel' },
 };
 
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 const OrderHistory = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+<<<<<<< HEAD
     const [filter, setFilter] = useState('all');
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -23,13 +29,18 @@ const OrderHistory = () => {
                 setOrders(res.data);
                 setLoading(false);
             } catch (_err) {
+<<<<<<< HEAD
                 setError('Không thể lấy lịch sử đơn hàng. Vui lòng thử lại sau.');
+=======
+                setError('Không thể lấy lịch sử đơn hàng');
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
                 setLoading(false);
             }
         };
         fetchOrders();
     }, []);
 
+<<<<<<< HEAD
     const filteredOrders = orders.filter(order => {
         if (filter === 'all') return true;
         if (filter === 'pending') return order.status === 'pending';
@@ -139,6 +150,38 @@ const OrderHistory = () => {
             )}
 
 
+=======
+    if (loading) return <p>Đang tải đơn hàng...</p>;
+    if (error) return <div className="error-state">{error}</div>;
+
+    return (
+        <main>
+            <section className="section-block">
+                <div className="section-heading">
+                    <div>
+                        <span className="eyebrow">Orders</span>
+                        <h2>Lịch Sử Đơn Hàng</h2>
+                    </div>
+                </div>
+                {orders.length === 0 ? (
+                    <div className="empty-state">Bạn chưa có đơn hàng nào.</div>
+                ) : (
+                    <div className="orders-list">
+                        {orders.map((order) => (
+                            <article className="order-card" key={order._id}>
+                                <span className={`status-pill ${order.status === 'delivered' ? 'delivered' : ''}`}>
+                                    {order.status}
+                                </span>
+                                <h3>Mã đơn hàng: {order._id}</h3>
+                                <p>Ngày đặt: {new Date(order.created_at).toLocaleString()}</p>
+                                <p>Tổng tiền: {order.total_price.toLocaleString()} VNĐ</p>
+                                <Link className="text-link" to={`/orders/${order._id}`}>Xem chi tiết</Link>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
         </main>
     );
 };

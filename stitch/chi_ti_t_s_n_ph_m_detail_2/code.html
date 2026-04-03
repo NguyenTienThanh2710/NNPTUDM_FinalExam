@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina Mobile | Precision Luminescence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1a1c1d",
+                        "tertiary": "#952200",
+                        "primary-fixed-dim": "#b7c4ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#dfe3ff",
+                        "primary": "#003ec7",
+                        "inverse-primary": "#b7c4ff",
+                        "on-error-container": "#93000a",
+                        "background": "#f9f9fb",
+                        "outline-variant": "#c3c5d9",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#636264",
+                        "inverse-on-surface": "#f0f0f2",
+                        "surface-container": "#eeeef0",
+                        "on-surface-variant": "#434656",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "outline": "#737688",
+                        "on-secondary-fixed-variant": "#474649",
+                        "on-tertiary-container": "#ffddd5",
+                        "surface": "#f9f9fb",
+                        "on-primary-fixed-variant": "#0038b6",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e2e2e4",
+                        "on-background": "#1a1c1d",
+                        "surface-container-high": "#e8e8ea",
+                        "secondary-container": "#e2dfe1",
+                        "on-tertiary-fixed-variant": "#891e00",
+                        "on-primary-fixed": "#001452",
+                        "inverse-surface": "#2f3132",
+                        "surface-tint": "#004ced",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "primary-container": "#0052ff",
+                        "tertiary-container": "#bf3003",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#5f5e60",
+                        "surface-dim": "#d9dadc",
+                        "on-tertiary-fixed": "#3c0800",
+                        "tertiary-fixed-dim": "#ffb4a1",
+                        "secondary-fixed": "#e4e2e4",
+                        "surface-container-highest": "#e2e2e4",
+                        "tertiary-fixed": "#ffdbd2",
+                        "primary-fixed": "#dde1ff",
+                        "surface-bright": "#f9f9fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f3f3f5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-shift-bg { background-color: rgba(243, 243, 245, 0.8); }
+        .glass-gradient {
+            background: linear-gradient(135deg, #003ec7 0%, #0052ff 100%);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 transition-all duration-300 hover:opacity-80">
+                Lumina Mobile
+            </div>
+<div class="hidden md:flex items-center space-gap-8 gap-x-8">
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-all duration-300" href="#">Điện thoại</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-all duration-300" href="#">Máy tính xách tay</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-all duration-300" href="#">Thiết bị đeo</a>
+<a class="text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 transition-all duration-300" href="#">Cửa hàng</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all duration-300">shopping_cart</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all duration-300">account_circle</button>
+</div>
+</div>
+</nav>
+<main class="pt-24 max-w-7xl mx-auto px-6">
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-2 mb-8 text-sm font-medium text-outline">1.240 Đánh giá</nav>
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mb-24">
+<!-- Left Column: Gallery -->
+<div class="space-y-6">
+<div class="aspect-square bg-surface-container-low rounded-xl overflow-hidden flex items-center justify-center p-12 relative group">
+<img alt="Lumina X Pro Flagship" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-700" data-alt="Close-up of a sleek navy blue flagship smartphone with triple camera system on a minimalist white textured background with soft dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj7LAbNxpqO96oUXKlgn3mWcSIcSBefY8G7X4Jf8W2H090Dc-RPO6TjPQE096UGNECZyHr4XY1N19mMT9ff86OUAGHwCvWJZRL4BWlUF_pqvxmIvgcCBSsOk2lVoEF5PtFLH55ui_xhb7cyjqfRwRP2fCUSG4j9HKZHDiRujaQ_yH7H2cG7yyToRfXgRWk85_FTNa7D0FXZ9SSLWNtNx4pKWZ4knIyPbk0XFxit9h0nfu_OinwZCDFvy42y3lIuOY4NaeF6PnIbw"/>
+<div class="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Hàng mới về</div>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<button class="aspect-square bg-surface-container-low rounded-xl p-2 border-2 border-primary overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Side profile of a slim mobile phone showing volume buttons and polished metallic frame under bright studio light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAiLxpPSLwbdbnqbwpJJBiogqcOvHZ85_Ju2xV7dHwm2bB3-BjrFDbSSNG5rHLyEgByQkKE58Vp_VGEOHHA8JSGCN9yDUoCi-XQUR_QoTqhu4Gw0ygTdB5X7cwOh9BucGp_lgDhVddofhcZdxOqclmIRCaiks2u4TxJ-cmjkNaDjF8CQhMfZYTkkBAeOZib6cmIIHcZjzNtLDhO07HjvXkt-t_vkB4Ral3iJMyDhnrNQ-zNFeYd4IPBlkRiRYqa7iCCty71jBXFg"/>
+</button>
+<button class="aspect-square bg-surface-container-low rounded-xl p-2 hover:bg-surface-container transition-colors overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Back panel of a smartphone featuring a high-gloss titanium finish and integrated premium camera lenses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9fMQKfYPMjTfGjowa41WFK7byRizw6fXKA1p0FrwC4XEy24ZGE9nFxIOsySw45JDS3bJvyTcjCjq6gPr2YQBpT7BtIFx29tyeXMtWT6lXizwqOl43_TY139ynKnw1XpRqE5S9YrkOFxajcXR9JTTS1jr2jqLfwzMO17CO88iHr_qbx2IvQDLOoTNjk-a3Nx-q_KLV7GaKzN1oCFCQpd5mqIs7xXxxdkJGTd2Lg41dW8Yr-ZXc3Oe5EPlSdIDzCUltwq_33Ft0vw"/>
+</button>
+<button class="aspect-square bg-surface-container-low rounded-xl p-2 hover:bg-surface-container transition-colors overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Front screen of a smartphone displaying a vibrant colorful high-resolution wallpaper with near-zero bezels" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwjZXY29u5x7f18n4-P-w0U75gwMxQ4VjlW52SEn4NTDREBvqb5E298c92h9BamLzpZ_TbKr1FhOGkyzZkMpK87hc0ePmoNVHFUcSnZ-x0qOWcuxDBGnKTKHspfocBPxuvhuTGf0OfCDz-ndjkeou0FARDw73VgAQp1T9ioIbEKG8abuOYWRvGGnpn2yJgpFLi-Iu9FpRph9YCciSAihrGdU0vgf4U07_1O-2d6WL9aRI38cNywqOze3QvRXqqamYClQJGr1X1pg"/>
+</button>
+<button class="aspect-square bg-surface-container-low rounded-xl p-2 hover:bg-surface-container transition-colors overflow-hidden flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Right Column: Product Details -->
+<div class="flex flex-col">
+<div class="mb-2">
+<span class="label-md font-bold tracking-widest text-primary uppercase text-xs">Dòng Precision Luminescence</span>
+</div>
+<h1 class="text-5xl font-black tracking-tight text-on-surface mb-4 leading-tight">Lumina X Pro</h1>
+<div class="flex items-center gap-4 mb-8">
+<div class="flex items-center text-amber-400">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0.5;">star_half</span>
+</div>
+<span class="text-sm font-medium text-outline">1.240 Đánh giá</span>
+<span class="text-outline">|</span>
+<span class="text-sm font-medium text-primary">Còn hàng</span>
+</div>
+<div class="text-3xl font-bold text-on-surface mb-10">
+                    $1,199.00 <span class="text-sm font-normal text-outline line-through ml-2">$1,299.00</span>
+</div>
+<!-- Color Selection -->
+<div class="mb-8">
+<h3 class="text-sm font-bold text-on-surface mb-4">CHỌN MÀU SẮC: <span class="font-normal text-outline">Xanh Titanium</span></h3>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full bg-slate-800 border-4 border-white shadow-[0_0_0_2px_#003ec7] transition-all"></button>
+<button class="w-10 h-10 rounded-full bg-zinc-400 border-4 border-white hover:shadow-[0_0_0_1px_#c3c5d9] transition-all"></button>
+<button class="w-10 h-10 rounded-full bg-stone-200 border-4 border-white hover:shadow-[0_0_0_1px_#c3c5d9] transition-all"></button>
+<button class="w-10 h-10 rounded-full bg-emerald-900 border-4 border-white hover:shadow-[0_0_0_1px_#c3c5d9] transition-all"></button>
+</div>
+</div>
+<!-- Storage Options -->
+<div class="mb-12">
+<h3 class="text-sm font-bold text-on-surface mb-4 uppercase tracking-wider">Dung lượng</h3>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-3 rounded-xl bg-surface-container text-on-surface font-semibold text-sm hover:bg-surface-container-high transition-colors">128GB</button>
+<button class="px-6 py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow-lg shadow-primary/20">256GB</button>
+<button class="px-6 py-3 rounded-xl bg-surface-container text-on-surface font-semibold text-sm hover:bg-surface-container-high transition-colors">512GB</button>
+<button class="px-6 py-3 rounded-xl bg-surface-container text-on-surface font-semibold text-sm hover:bg-surface-container-high transition-colors">1TB</button>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+<button class="py-5 px-8 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"><span class="material-symbols-outlined">shopping_cart</span> Thêm vào giỏ hàng</button>
+<button class="py-5 px-8 glass-gradient text-white font-bold rounded-xl shadow-xl shadow-primary/20 hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95">Mua ngay</button>
+</div>
+<div class="flex items-center gap-6 p-4 bg-surface-container-low rounded-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+<span class="text-xs font-medium">Giao hàng miễn phí</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<span class="text-xs font-medium">Bảo hành 2 năm</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">replay</span>
+<span class="text-xs font-medium">Đổi trả 30 ngày</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Product Tabs Section -->
+<section class="border-t border-surface-container pt-16">
+<div class="flex gap-12 border-b border-surface-container mb-12">
+<button class="pb-4 text-lg font-bold text-primary border-b-2 border-primary">Thông số kỹ thuật</button>
+<button class="pb-4 text-lg font-semibold text-outline hover:text-on-surface transition-colors">Đánh giá khách hàng (1.240)</button>
+<button class="pb-4 text-lg font-semibold text-outline hover:text-on-surface transition-colors">Sản phẩm tương tự</button>
+</div>
+<!-- Specs Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+<div class="p-8 bg-surface-container-low rounded-xl space-y-4">
+<span class="material-symbols-outlined text-primary text-3xl">memory</span>
+<h4 class="text-xl font-bold">Lumina Neural Chip 4</h4>
+<p class="text-outline text-sm leading-relaxed">Kiến trúc 4nm với CPU 12 nhân và GPU 16 nhân cho các tác vụ chơi game và sáng tạo vô đối.</p>
+</div>
+<div class="p-8 bg-surface-container-low rounded-xl space-y-4 md:col-span-2">
+<div class="flex justify-between items-start">
+<div class="space-y-4">
+<span class="material-symbols-outlined text-primary text-3xl">photo_camera</span>
+<h4 class="text-xl font-bold">Quang học Cinematic Pro</h4>
+<p class="text-outline text-sm leading-relaxed max-w-md">Cảm biến chính 108MP khẩu độ f/1.4, camera tele tiềm vọng 50MP zoom quang 10x và ống kính siêu rộng 120 độ.</p>
+</div>
+<img class="h-32 object-cover rounded-lg" data-alt="A professional camera lens element array showing high-quality glass coatings with purple and green reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk_jzpR0e-dm4f0ZJ5zy2Pimw99zsQzE-nMy48A4Ik9DtDQs0N_FTkOVGPYR65JS2WUURgGkhWmn4Y22Fd25rFogvrfU6WxP54k8lWrwWDvPE_bgROT_wr1qAM5z5Ptz2Br33mkKn-iZtp4g1VnVBbXKIhILYZNu23F-l4KnvybfE2pMk2POzSIUE4_p1E3676Z3N8XmbQhrHvcqASMWUOOqk-rG1AvI-ncI-3V4aszfiKBVKOVutX6nOnPTMOzokZrEX5MqpxYw"/>
+</div>
+</div>
+<div class="p-8 bg-primary text-white rounded-xl space-y-4">
+<span class="material-symbols-outlined text-3xl">bolt</span>
+<h4 class="text-xl font-bold">Màn hình Luminescence</h4>
+<p class="text-primary-fixed-dim text-sm leading-relaxed">Màn hình OLED 6.7 inch với độ sáng tối đa 2500 nits và tần số quét thích ứng ProMotion 1-120Hz.</p>
+</div>
+<div class="p-8 bg-surface-container-low rounded-xl space-y-4">
+<span class="material-symbols-outlined text-primary text-3xl">battery_charging_full</span>
+<h4 class="text-xl font-bold">Công nghệ HyperCharge</h4>
+<p class="text-outline text-sm leading-relaxed">Sạc từ 0 lên 100% trong 22 phút với sạc có dây 120W. Hỗ trợ sạc không dây 50W.</p>
+</div>
+<div class="p-8 bg-surface-container-low rounded-xl space-y-4">
+<span class="material-symbols-outlined text-primary text-3xl">water_drop</span>
+<h4 class="text-xl font-bold">Chứng nhận IP68</h4>
+<p class="text-outline text-sm leading-relaxed">Kháng nước ở độ sâu 6 mét trong 30 phút. Mặt kính Ceramic Shield siêu bền.</p>
+</div>
+</div>
+<!-- Similar Products Grid -->
+<div class="mb-32">
+<h3 class="text-2xl font-black mb-12">Sản phẩm tương thích trong hệ sinh thái</h3>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<!-- Product Card 1 -->
+<div class="group">
+<div class="aspect-[4/5] bg-surface-container-low rounded-xl p-8 mb-4 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200">
+<img class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" data-alt="Premium wireless headphones in matte charcoal grey on a clean reflective surface with soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzgnXGlIpeJc74J9-2R2ENzsdRHYRmIaHPKIyQ1H6QGktoTp8IyUjcnw7Jt8lEaXwa1nnkLS9b2RW2uSLMeW5afTav8ScUrk4NdMkiAWfgoB_JpvxbU0ZZL-3q3pyK7YtKXjcAj-iW-4OWhu7v3LnfiBofDHftAQ-Qlsd0KTqLbopre8HkCfC91yZ32uD8C7_4MBB0rUuvQWuBjpCuy-qXwGALuyPurbr26LqpB5xcpCVZbOU5pGYBtMkOmWZwmclL-yb76GB0QQ"/>
+</div>
+<h4 class="font-bold text-on-surface">Lumina Buds Ultra</h4>
+<p class="text-sm text-outline mb-2">Âm thanh chống ồn</p>
+<p class="font-bold text-primary">$249.00</p>
+</div>
+<!-- Product Card 2 -->
+<div class="group">
+<div class="aspect-[4/5] bg-surface-container-low rounded-xl p-8 mb-4 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200">
+<img class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" data-alt="Elegant silver luxury smartwatch with leather strap displayed on a white podium with soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSP798B7fBUHhwPnFV-nN1pIuCUcaR7AK0HTsxpsfqLVLRybmbVdxXXS4cUYVhwEc_l2w8XEBCjv8QNWRRRFTrOwX-7bHJHjY4z29mqHlmohGltZ7sGcxfpa8a4raANbXYyr4cEUndyebtrnh-RNPcaFXBY_Bb8WZcVqU82W2wmnCmYVHmbL2BgpO5kw5gCUUT6hCIYYX676bwm3wJbzhqoACzwLE148Vl9te-4Zg0O5tkLdWnY9tkvYTeK23Ci2qZpOuHSfxYOw"/>
+</div>
+<h4 class="font-bold text-on-surface">Lumina Watch Series 4</h4>
+<p class="text-sm text-outline mb-2">Sức khỏe &amp; Theo dõi</p>
+<p class="font-bold text-primary">$399.00</p>
+</div>
+<!-- Product Card 3 -->
+<div class="group">
+<div class="aspect-[4/5] bg-surface-container-low rounded-xl p-8 mb-4 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200">
+<img class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" data-alt="Minimalist thin laptop in brushed aluminum finish open on a wooden desk with golden hour sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZrPkGMc4PCtrtyqYEaC2bMHI2Avazy2f9NgxVc-tKYotqYyPOJB6GMb7IY8mY1whDeaO_iod9LpVhBLxnGZgbvU8-MuUFfICqxbNTMQxEpS1BH5vwNssSnqCTeW6n3hNGjGrnrC_YC1kFACldCnV14HSF0OQfnydhhYami0jX105QeMIgULqonA-z7EleqbnwZD2ffFDGIR_Tb6s6LS_MKo3hvbuF6A3opFReRNEgD82rIg9sIxY1zTZL4Qyf5UbSM3YV46XmQg"/>
+</div>
+<h4 class="font-bold text-on-surface">Lumina Air Book</h4>
+<p class="text-sm text-outline mb-2">Sức mạnh trạm làm việc</p>
+<p class="font-bold text-primary">$1,499.00</p>
+</div>
+<!-- Product Card 4 -->
+<div class="group">
+<div class="aspect-[4/5] bg-surface-container-low rounded-xl p-8 mb-4 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200">
+<img class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" data-alt="Sleek black portable battery charger with subtle LED indicators on a modern workspace desk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmu9WSFBqn0AmeHDnyPufCzuXQ99d6yS3lUwBIJ2TFtFo6WTiyZH-X-TMxE-gx1R8TwYw-OHGzdcQ3yMMqnCtXB_b-zLGu-jl6xR6t6Czs4yIb_uNkWiI8LaSE70t6zBFOX7iUwYKIJq8RTqkmziN9iJoEEBo2NYuAB4Nadf0v7pGTmNpKqQDbzy5r3ffJeTyXU6bhHtfSEOuFqg7Wd7V1X4_IhoyvvIbqjSJD20jGIWQuZNkwqX4OJrQasZnoNqQc1cN7KEE7lg"/>
+</div>
+<h4 class="font-bold text-on-surface">MagSafe Power Pack</h4>
+<p class="text-sm text-outline mb-2">Phụ kiện thiết yếu</p>
+<p class="font-bold text-primary">$89.00</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 bg-slate-50 dark:bg-slate-950">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-8 py-16 max-w-7xl mx-auto">
+<div class="space-y-6">
+<div class="text-lg font-bold text-slate-900 dark:text-slate-100">Lumina Mobile</div>
+<p class="text-sm leading-relaxed font-normal text-slate-500 dark:text-slate-400">Cách mạng hóa công nghệ cá nhân với các thiết bị được chế tạo chính xác nhằm khai phá tiềm năng con người.</p>
+</div>
+<div class="space-y-4">
+<h4 class="font-bold text-sm uppercase tracking-widest text-slate-900 dark:text-slate-100">Liên kết nhanh</h4>
+<div class="flex flex-col gap-2">
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Bảo hành</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Chính sách bảo mật</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Liên hệ</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Bản tin</a>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-bold text-sm uppercase tracking-widest text-slate-900 dark:text-slate-100">Hỗ trợ</h4>
+<div class="flex flex-col gap-2">
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Trung tâm trợ giúp</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Theo dõi đơn hàng</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">So sánh các dòng máy</a>
+<a class="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Chương trình tái chế</a>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-bold text-sm uppercase tracking-widest text-slate-900 dark:text-slate-100">Bản tin</h4>
+<p class="text-xs text-slate-500 mb-4">Nhận quyền truy cập sớm vào các đợt ra mắt flagship.</p>
+<div class="flex gap-2">
+<input class="bg-surface-container-highest border-none rounded-lg text-sm px-4 py-2 w-full focus:ring-2 focus:ring-primary" placeholder="Địa chỉ email" type="email"/>
+<button class="bg-primary text-white p-2 rounded-lg material-symbols-outlined">send</button>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-8 py-8 border-t border-slate-200 dark:border-slate-800 text-center">
+<p class="text-sm leading-relaxed font-normal text-slate-500 dark:text-slate-400">© 2024 Lumina Mobile. Precision Luminescence.</p>
+</div>
+</footer>
+</body></html>

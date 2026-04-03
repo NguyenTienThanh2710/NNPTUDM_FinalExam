@@ -32,6 +32,7 @@ const ProductSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Brand',
         required: true
+<<<<<<< HEAD
     },
     is_featured: {
         type: Boolean,
@@ -39,6 +40,9 @@ const ProductSchema = new Schema({
     }
 }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+=======
+    }
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 });
 
 module.exports = mongoose.model('Product', ProductSchema);

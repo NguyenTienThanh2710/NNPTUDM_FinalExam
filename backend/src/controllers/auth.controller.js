@@ -111,13 +111,18 @@ const login = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 // @desc    Get all users (Admin only)
+=======
+// @desc    Get all users
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 // @route   GET /api/auth/users
 // @access  Private/Admin
 const getUsers = async (req, res) => {
     try {
         const users = await User.find({}).select('-password').populate('role_id', 'name');
         res.json(users);
+<<<<<<< HEAD
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
@@ -133,12 +138,20 @@ const getMe = async (req, res) => {
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server khi fetch profile' });
+=======
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi fetch users' });
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
     }
 };
 
 module.exports = {
     register,
     login,
+<<<<<<< HEAD
     getUsers,
     getMe
+=======
+    getUsers
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 };

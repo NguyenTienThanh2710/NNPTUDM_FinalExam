@@ -12,15 +12,23 @@ import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import CategoryList from './pages/CategoryList';
 import Cart from './pages/Cart';
+<<<<<<< HEAD
 import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
 import OrderSuccess from './pages/OrderSuccess';
+=======
+import OrderHistory from './pages/OrderHistory';
+import OrderDetail from './pages/OrderDetail';
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
 import AdminOrders from './pages/AdminOrders';
+<<<<<<< HEAD
 import AdminOrderDetail from './pages/AdminOrderDetail';
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
 import AdminCustomers from './pages/AdminCustomers';
 import AdminStatistics from './pages/AdminStatistics';
 import AdminProducts from './pages/AdminProducts';
@@ -46,8 +54,11 @@ export default function App() {
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/cart" element={<Cart />} />
+<<<<<<< HEAD
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:id" element={<OrderSuccess />} />
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             
@@ -57,7 +68,10 @@ export default function App() {
             <Route path="/admin/categories" element={<ProtectedRoute requireAdmin={true}><AdminCategories /></ProtectedRoute>} />
             <Route path="/admin/brands" element={<ProtectedRoute requireAdmin={true}><AdminBrands /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute requireAdmin={true}><AdminOrders /></ProtectedRoute>} />
+<<<<<<< HEAD
             <Route path="/admin/orders/:id" element={<ProtectedRoute requireAdmin={true}><AdminOrderDetail /></ProtectedRoute>} />
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
             <Route path="/admin/customers" element={<ProtectedRoute requireAdmin={true}><AdminCustomers /></ProtectedRoute>} />
             <Route path="/admin/statistics" element={<ProtectedRoute requireAdmin={true}><AdminStatistics /></ProtectedRoute>} />
           </Routes>

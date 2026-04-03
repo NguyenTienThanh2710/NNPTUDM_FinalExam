@@ -16,6 +16,7 @@ const OrderSchema = new Schema({
         enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
         default: 'pending'
     },
+<<<<<<< HEAD
     payment_method: {
         type: String,
         enum: ['cod', 'bank_transfer', 'momo'],
@@ -42,6 +43,8 @@ const OrderSchema = new Schema({
         type: String,
         default: ''
     },
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
     created_at: {
         type: Date,
         default: Date.now

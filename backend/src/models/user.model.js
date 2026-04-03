@@ -23,6 +23,7 @@ const UserSchema = new Schema({
     avatar: {
         type: String
     },
+<<<<<<< HEAD
     phone: {
         type: String,
         default: ''
@@ -31,6 +32,8 @@ const UserSchema = new Schema({
         type: String,
         default: ''
     },
+=======
+>>>>>>> f0b9c95efda617b6cecb9591dbbb748c2481fa54
     status: {
         type: String,
         enum: ['active', 'locked'],
