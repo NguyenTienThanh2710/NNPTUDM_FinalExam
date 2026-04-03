@@ -54,10 +54,9 @@ const start = async () => {
         await mongoose.connect(mongoUri);
         console.log('MongoDB Connected...');
 
-        app.listen(
-            PORT, 
-            console.log(`Server running on port ${PORT}`)
-        );
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
 
         const shutdown = async () => {
             try {
