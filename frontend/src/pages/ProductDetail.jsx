@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import wishlistService from '../services/wishlist.service';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -9,6 +10,7 @@ const ProductDetail = () => {
     const [error, setError] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
+    const [isInWishlist, setIsInWishlist] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -19,7 +21,21 @@ const ProductDetail = () => {
                 setError('Không thể lấy thông tin sản phẩm');
             }
         };
+
+        const fetchWishlistStatus = async () => {
+            const token = localStorage.getItem('token');
+            if (token && token !== 'null' && token !== 'undefined') {
+                try {
+                    const res = await wishlistService.checkInWishlist(id);
+                    setIsInWishlist(res.isInWishlist);
+                } catch (err) {
+                    console.error('Error checking wishlist status:', err);
+                }
+            }
+        };
+
         fetchProduct();
+        fetchWishlistStatus();
     }, [id]);
 
     const handleAddToCart = async () => {
@@ -38,6 +54,22 @@ const ProductDetail = () => {
             }
         } finally {
             setAdding(false);
+        }
+    };
+
+    const handleToggleWishlist = async () => {
+        const token = localStorage.getItem('token');
+        if (!token || token === 'null' || token === 'undefined') {
+            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
+            navigate('/login');
+            return;
+        }
+
+        try {
+            const res = await wishlistService.toggleWishlist(id);
+            setIsInWishlist(res.isWishlisted);
+        } catch (err) {
+            console.error('Error toggling wishlist:', err);
         }
     };
 
@@ -151,6 +183,20 @@ const ProductDetail = () => {
                                     Thêm vào giỏ
                                 </>
                             )}
+                        </button>
+
+                        <button 
+                            onClick={handleToggleWishlist}
+                            title={(!localStorage.getItem('token') || localStorage.getItem('token') === 'null') ? "Đăng nhập để yêu thích" : ""}
+                            className={`py-5 px-8 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 border-2 shadow-sm ${isInWishlist ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800' : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50'}`}
+                        >
+                            <span 
+                                className={`material-symbols-outlined text-xl ${isInWishlist ? 'fill-current' : ''}`}
+                                style={isInWishlist ? { fontVariationSettings: "'FILL' 1" } : {}}
+                            >
+                                favorite
+                            </span>
+                            {isInWishlist ? 'Đã thích' : 'Yêu thích'}
                         </button>
                     </div>
 

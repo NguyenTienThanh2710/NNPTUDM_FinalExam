@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { getAuthUser } from '../utils/auth';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -15,6 +16,9 @@ const Login = () => {
         try {
             const res = await api.post('/auth/login', { email, password });
             localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            // Notify Header to update
+            window.dispatchEvent(new Event('authChange'));
             const user = getAuthUser();
             if (user?.role === 'ADMIN') {
                 navigate('/admin');
@@ -24,6 +28,33 @@ const Login = () => {
         } catch (err) {
             setError(err.response?.data?.msg || 'Email hoặc mật khẩu không đúng');
         }
+    };
+
+    const handleGoogleSuccess = async (response) => {
+        try {
+            const res = await api.post('/auth/google-login', { 
+                credential: response.credential 
+            });
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            // Notify Header to update
+            window.dispatchEvent(new Event('authChange'));
+            alert('Đăng nhập thành công! Chào mừng ' + (res.data.user?.name || 'bạn'));
+            
+            // Re-fetch user or check role
+            const user = getAuthUser();
+            if (user?.role === 'ADMIN') {
+                navigate('/admin');
+            } else {
+                navigate('/products');
+            }
+        } catch (err) {
+            setError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+        }
+    };
+
+    const handleGoogleError = () => {
+        setError('Có lỗi xảy ra trong quá trình đăng nhập bằng Google.');
     };
 
     return (
@@ -131,8 +162,18 @@ const Login = () => {
                                 <div className="w-full border-t border-surface-container-highest"></div>
                             </div>
                             <div className="relative flex justify-center text-xs uppercase tracking-widest font-bold">
-                                <span className="bg-surface-container-lowest px-4 text-outline">Hoặc</span>
+                                <span className="bg-surface-container-lowest px-4 text-outline">Hoặc đăng nhập bằng</span>
                             </div>
+                        </div>
+                        
+                        <div className="flex justify-center mb-6">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                theme="filled_blue"
+                                shape="pill"
+                                width="100%"
+                            />
                         </div>
                         
                         <p className="mt-10 text-center text-secondary font-medium">

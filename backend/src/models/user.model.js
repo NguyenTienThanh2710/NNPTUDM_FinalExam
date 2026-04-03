@@ -23,10 +23,17 @@ const UserSchema = new Schema({
     avatar: {
         type: String
     },
+    phone: {
+        type: String
+    },
     status: {
         type: String,
         enum: ['active', 'locked'],
         default: 'active'
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 });
 

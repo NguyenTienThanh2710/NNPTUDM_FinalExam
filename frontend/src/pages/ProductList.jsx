@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import wishlistService from '../services/wishlist.service';
+import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
+    const [wishlistedIds, setWishlistedIds] = useState([]);
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -15,8 +19,45 @@ const ProductList = () => {
                 setError('Không thể lấy danh sách sản phẩm');
             }
         };
+
+        const fetchWishlist = async () => {
+            const token = localStorage.getItem('token');
+            if (token && token !== 'null' && token !== 'undefined') {
+                try {
+                    const res = await wishlistService.getWishlist();
+                    setWishlistedIds(res.data.map(p => p._id));
+                } catch (err) {
+                    console.error('Error fetching wishlist:', err);
+                }
+            }
+        };
+
         fetchProducts();
+        fetchWishlist();
     }, []);
+
+    const handleToggleWishlist = async (e, productId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const token = localStorage.getItem('token');
+        if (!token || token === 'null' || token === 'undefined') {
+            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
+            navigate('/login');
+            return;
+        }
+
+        try {
+            const res = await wishlistService.toggleWishlist(productId);
+            if (res.isWishlisted) {
+                setWishlistedIds([...wishlistedIds, productId]);
+            } else {
+                setWishlistedIds(wishlistedIds.filter(id => id !== productId));
+            }
+        } catch (err) {
+            console.error('Error toggling wishlist:', err);
+        }
+    };
 
     return (
         <main className="pt-28 pb-20 max-w-7xl mx-auto px-6 min-h-screen">
@@ -112,6 +153,21 @@ const ProductList = () => {
                                         ) : (
                                             <div className="w-full h-full bg-surface flex items-center justify-center text-outline">No Image</div>
                                         )}
+                                        
+                                        {/* Wishlist Button */}
+                                        <button 
+                                            onClick={(e) => handleToggleWishlist(e, product._id)}
+                                            title={(!localStorage.getItem('token') || localStorage.getItem('token') === 'null') ? "Đăng nhập để yêu thích" : ""}
+                                            className="absolute top-4 right-4 z-10 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 active:scale-95"
+                                        >
+                                            <span 
+                                                className={`material-symbols-outlined text-xl transition-colors duration-300 ${wishlistedIds.includes(product._id) ? 'text-red-500 fill-current' : 'text-slate-400'}`}
+                                                style={wishlistedIds.includes(product._id) ? { fontVariationSettings: "'FILL' 1" } : {}}
+                                            >
+                                                favorite
+                                            </span>
+                                        </button>
+
                                         <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
                                             <Link to={`/products/${product._id}`} className="w-full bg-white text-on-surface font-bold py-3 rounded-full flex items-center justify-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
                                                 <span className="material-symbols-outlined text-sm">visibility</span>

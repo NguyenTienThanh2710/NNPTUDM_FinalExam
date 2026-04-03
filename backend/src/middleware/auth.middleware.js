@@ -31,7 +31,7 @@ const admin = (req, res, next) => {
     if (req.user && req.user.role_id && req.user.role_id.name === 'ADMIN') {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as an admin' });
+        res.status(403).json({ success: false, message: 'Not authorized as an admin, access denied' });
     }
 };
 
