@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 dotenv.config();
 
@@ -15,8 +16,22 @@ const Order = require('./src/models/order.model');
 const OrderItem = require('./src/models/orderItem.model');
 
 const seedData = async () => {
+    let memoryServer = null;
     try {
-        await mongoose.connect(process.env.MONGO_URI);
+        let mongoUri = process.env.MONGO_URI;
+
+        if (!mongoUri) {
+            const dbName = process.env.MONGO_DB_NAME || 'shop-database';
+            const port = Number(process.env.MONGO_PORT || 27017);
+
+            memoryServer = await MongoMemoryServer.create({
+                instance: { port, dbName }
+            });
+
+            mongoUri = `mongodb://127.0.0.1:${port}/${dbName}`;
+        }
+
+        await mongoose.connect(mongoUri);
 
         await Promise.all([
             Role.deleteMany({}),
@@ -47,6 +62,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: adminRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=11',
+                address: 'Tòa nhà Vinhomes Golden River, Ba Son, Quận 1, TP.HCM',
                 status: 'active'
             },
             {
@@ -55,6 +71,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=12',
+                address: '123 Đường Nguyễn Hữu Cảnh, Phường Bình Thạnh, Quận Bình Thạnh, TP.HCM',
                 status: 'active'
             },
             {
@@ -63,6 +80,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=5',
+                address: '456 Đường Cách Mạng Tháng Tám, Phường 6, Quận 3, TP.HCM',
                 status: 'active'
             },
             {
@@ -71,6 +89,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=60',
+                address: 'Landmark 81, Phường Bình Khánh, Quận 2, TP.HCM',
                 status: 'active'
             }
         ]);
@@ -213,6 +232,9 @@ const seedData = async () => {
         process.exitCode = 1;
     } finally {
         await mongoose.disconnect();
+        if (memoryServer) {
+            await memoryServer.stop();
+        }
     }
 };
 

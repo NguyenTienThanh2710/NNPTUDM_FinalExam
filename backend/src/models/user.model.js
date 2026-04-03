@@ -23,6 +23,10 @@ const UserSchema = new Schema({
     avatar: {
         type: String
     },
+    address: {
+        type: String,
+        default: ''
+    },
     status: {
         type: String,
         enum: ['active', 'locked'],

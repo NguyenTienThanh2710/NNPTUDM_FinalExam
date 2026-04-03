@@ -6,6 +6,7 @@ const Register = () => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    const [address, setAddress] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
@@ -26,7 +27,7 @@ const Register = () => {
         }
 
         try {
-            await api.post('/auth/register', { name, email, password });
+            await api.post('/auth/register', { name, email, password, address });
             navigate('/login');
         } catch (err) {
             setError(err.response?.data?.msg || 'Đã có lỗi xảy ra');
@@ -126,6 +127,20 @@ const Register = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Address */}
+                        <div className="space-y-2 text-left">
+                            <label className="text-xs font-semibold text-on-surface-variant tracking-wide uppercase">Địa chỉ</label>
+                            <div className="relative group">
+                                <input 
+                                    className="w-full bg-surface-container-highest border-none rounded-xl py-3.5 px-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all" 
+                                    placeholder="Ví dụ: 123 Đường ABC, Phường XYZ, Quận 1, TP.HCM" 
+                                    type="text" 
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
                                 />
                             </div>
                         </div>
