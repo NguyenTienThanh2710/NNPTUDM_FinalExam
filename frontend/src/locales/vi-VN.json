@@ -1,0 +1,39 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Có lỗi xảy ra, vui lòng thử lại.",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "back": "Quay lại"
+  },
+  "checkout": {
+    "title": "Thanh Toán",
+    "subtitle": "Hoàn tất các bước dưới đây để đặt hàng",
+    "section_customer": "Thông tin khách hàng",
+    "section_shipping": "Địa chỉ giao hàng",
+    "section_payment": "Phương thức thanh toán",
+    "section_summary": "Tóm tắt đơn hàng",
+    "label_name": "Họ và tên",
+    "label_phone": "Số điện thoại",
+    "label_email": "Email (Nhận hóa đơn điện tử)",
+    "label_province": "Tỉnh/Thành phố",
+    "label_district": "Quận/Huyện",
+    "label_ward": "Phường/Xã",
+    "label_address": "Địa chỉ chi tiết",
+    "placeholder_name": "Nguyễn Văn A",
+    "placeholder_phone": "0901 234 567",
+    "placeholder_email": "example@gmail.com",
+    "placeholder_address": "Số nhà, tên đường...",
+    "btn_submit": "Đặt hàng ngay",
+    "submitting": "Đang xử lý...",
+    "validation_name": "Vui lòng nhập họ và tên.",
+    "validation_phone": "Vui lòng nhập số điện thoại.",
+    "validation_email": "Vui lòng nhập email.",
+    "validation_address": "Vui lòng nhập địa chỉ chi tiết.",
+    "summary_subtotal": "Tạm tính",
+    "summary_shipping": "Phí vận chuyển",
+    "summary_discount": "Giảm giá",
+    "summary_total": "Tổng cộng",
+    "vat_included": "(Đã bao gồm VAT)"
+  }
+}

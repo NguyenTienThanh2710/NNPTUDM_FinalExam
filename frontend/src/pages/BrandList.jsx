@@ -18,17 +18,26 @@ const BrandList = () => {
     }, []);
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h2>Danh Sách Thương Hiệu</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
-                {brands.map((brand) => (
-                    <li key={brand._id}>
-                        {brand.name} {brand.logo && <img src={brand.logo} alt={brand.name} width="50" />}
-                    </li>
-                ))}
-            </ul>
-        </div>
+        <main>
+            <section className="section-block">
+                <div className="section-heading">
+                    <div>
+                        <span className="eyebrow">Brands</span>
+                        <h2>Danh Sách Thương Hiệu</h2>
+                    </div>
+                </div>
+                {error && <div className="error-state">{error}</div>}
+                <div className="grid-cards">
+                    {brands.map((brand) => (
+                        <article className="brand-card" key={brand._id}>
+                            {brand.logo && <img className="brand-logo" src={brand.logo} alt={brand.name} />}
+                            <h3>{brand.name}</h3>
+                            <p>Thương hiệu đang có trong hệ thống demo.</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+        </main>
     );
 };
 

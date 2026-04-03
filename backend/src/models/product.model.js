@@ -32,7 +32,13 @@ const ProductSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Brand',
         required: true
+    },
+    is_featured: {
+        type: Boolean,
+        default: false
     }
+}, {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 module.exports = mongoose.model('Product', ProductSchema);

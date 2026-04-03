@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const Role = require('../models/role.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -16,11 +17,18 @@ const register = async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
+        // Retrieve default USER role
+        const userRole = await Role.findOne({ name: 'USER' });
+        if (!userRole) {
+            return res.status(500).json({ msg: 'Server setup error: Roles not defined' });
+        }
+
         // Create new user
         user = new User({
             name,
             email,
-            password
+            password,
+            role_id: userRole._id
         });
 
         // Encrypt password
@@ -28,12 +36,13 @@ const register = async (req, res) => {
         user.password = await bcrypt.hash(password, salt);
 
         await user.save();
+        await user.populate('role_id');
 
         // Create and return JWT
         const payload = {
             user: {
                 id: user.id,
-                role: user.role
+                role: user.role_id.name
             }
         };
 
@@ -61,7 +70,7 @@ const login = async (req, res) => {
 
     try {
         // Check if user exists
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ email }).populate('role_id');
 
         if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials' });
@@ -83,7 +92,7 @@ const login = async (req, res) => {
         const payload = {
             user: {
                 id: user.id,
-                role: user.role
+                role: user.role_id.name
             }
         };
 
@@ -102,7 +111,34 @@ const login = async (req, res) => {
     }
 };
 
+// @desc    Get all users (Admin only)
+// @route   GET /api/auth/users
+// @access  Private/Admin
+const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select('-password').populate('role_id', 'name');
+        res.json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+};
+
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password').populate('role_id', 'name');
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi fetch profile' });
+    }
+};
+
 module.exports = {
     register,
-    login
+    login,
+    getUsers,
+    getMe
 };

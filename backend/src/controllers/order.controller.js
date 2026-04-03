@@ -4,11 +4,13 @@ const Cart = require('../models/cart.model');
 const CartItem = require('../models/cartItem.model');
 const Product = require('../models/product.model');
 
-// @desc    Create new order
+// @desc    Create new order from cart
 // @route   POST /api/orders
 // @access  Private
 const createOrder = async (req, res) => {
     try {
+        const { payment_method = 'cod', shipping_address = '', recipient_name = '', recipient_email = '', recipient_phone = '' } = req.body;
+
         const cart = await Cart.findOne({ user_id: req.user.id });
 
         if (!cart) {
@@ -30,7 +32,13 @@ const createOrder = async (req, res) => {
         const order = new Order({
             user_id: req.user.id,
             total_price: totalPrice,
-            status: 'pending'
+            status: 'pending',
+            payment_method,
+            payment_status: 'pending',
+            shipping_address,
+            recipient_name,
+            recipient_email,
+            recipient_phone
         });
 
         const createdOrder = await order.save();
@@ -70,6 +78,19 @@ const getOrders = async (req, res) => {
     }
 };
 
+// @desc    Get all orders (Admin)
+// @route   GET /api/orders/all
+// @access  Private/Admin
+const getAllOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({}).populate('user_id', 'name email').sort({ created_at: -1 });
+        res.json(orders);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // @desc    Get order by ID
 // @route   GET /api/orders/:id
 // @access  Private
@@ -82,7 +103,7 @@ const getOrderById = async (req, res) => {
         }
 
         // Ensure user owns this order OR is admin
-        if (order.user_id.toString() !== req.user.id && req.user.role !== 'ADMIN') {
+        if (order.user_id.toString() !== req.user.id && req.user.role_id?.name !== 'ADMIN') {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
@@ -121,9 +142,34 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+// @desc    Update payment status
+// @route   PUT /api/orders/:id/payment
+// @access  Private/Admin
+const updatePaymentStatus = async (req, res) => {
+    const { payment_status } = req.body;
+
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.payment_status = payment_status;
+        const updatedOrder = await order.save();
+
+        res.json(updatedOrder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createOrder,
     getOrders,
+    getAllOrders,
     getOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    updatePaymentStatus
 };

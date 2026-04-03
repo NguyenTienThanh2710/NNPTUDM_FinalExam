@@ -18,17 +18,26 @@ const CategoryList = () => {
     }, []);
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h2>Danh Mục Sản Phẩm</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
-                {categories.map((category) => (
-                    <li key={category._id}>
-                        <strong>{category.name}</strong>: {category.description}
-                    </li>
-                ))}
-            </ul>
-        </div>
+        <main>
+            <section className="section-block">
+                <div className="section-heading">
+                    <div>
+                        <span className="eyebrow">Collections</span>
+                        <h2>Danh Mục Sản Phẩm</h2>
+                    </div>
+                </div>
+                {error && <div className="error-state">{error}</div>}
+                <div className="grid-cards">
+                    {categories.map((category) => (
+                        <article className="category-card" key={category._id}>
+                            <span className="eyebrow">Category</span>
+                            <h3>{category.name}</h3>
+                            <p>{category.description}</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+        </main>
     );
 };
 

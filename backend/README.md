@@ -67,6 +67,15 @@ Sau khi cấu hình xong, chạy lệnh sau từ thư mục `backend`:
 node app.js
 ```
 
+Nếu muốn tạo dữ liệu mẫu cho MongoDB, chạy thêm:
+```bash
+npm run seed
+```
+
+Tài khoản demo sau khi seed:
+- `user@example.com` / `123456`
+- `admin@example.com` / `123456`
+
 Nếu không có lỗi, bạn sẽ thấy thông báo trên terminal:
 ```
 MongoDB Connected...

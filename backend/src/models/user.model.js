@@ -15,13 +15,21 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
-    role: {
-        type: String,
-        enum: ['USER', 'ADMIN'],
-        default: 'USER'
+    role_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'Role',
+        required: true
     },
     avatar: {
         type: String
+    },
+    phone: {
+        type: String,
+        default: ''
+    },
+    address: {
+        type: String,
+        default: ''
     },
     status: {
         type: String,

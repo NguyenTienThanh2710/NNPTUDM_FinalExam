@@ -75,7 +75,7 @@ const deleteBrand = async (req, res) => {
         const brand = await Brand.findById(req.params.id);
 
         if (brand) {
-            await brand.remove();
+            await Brand.findByIdAndDelete(req.params.id);
             res.json({ message: 'Brand removed' });
         } else {
             res.status(404).json({ message: 'Brand not found' });

@@ -12,8 +12,8 @@ const protect = async (req, res, next) => {
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Get user from the token
-            req.user = await User.findById(decoded.user.id).select('-password');
+            // Get user from the token and populate role
+            req.user = await User.findById(decoded.user.id).select('-password').populate('role_id');
 
             next();
         } catch (error) {
@@ -28,7 +28,7 @@ const protect = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-    if (req.user && req.user.role === 'ADMIN') {
+    if (req.user && req.user.role_id && req.user.role_id.name === 'ADMIN') {
         next();
     } else {
         res.status(403).json({ message: 'Not authorized as an admin' });
