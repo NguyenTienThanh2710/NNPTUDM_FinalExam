@@ -14,6 +14,7 @@ import CategoryList from './pages/CategoryList';
 import Cart from './pages/Cart';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
+import Wishlist from './pages/Wishlist';
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><AdminDashboard /></ProtectedRoute>} />

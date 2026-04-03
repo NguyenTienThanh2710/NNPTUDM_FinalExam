@@ -36,6 +36,9 @@ export default function Header() {
           <Link to="/cart" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
             <span className="material-symbols-outlined">shopping_cart</span>
           </Link>
+          <Link to="/wishlist" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
+            <span className="material-symbols-outlined">favorite</span>
+          </Link>
           <Link to="/login" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
             <span className="material-symbols-outlined">account_circle</span>
           </Link>
