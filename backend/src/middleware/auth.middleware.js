@@ -31,6 +31,11 @@ const protect = async (req, res, next) => {
             // Get token from header
             token = req.headers.authorization.split(' ')[1];
 
+            // If token is missing or a placeholder string, fail early
+            if (!token || token === 'null' || token === 'undefined') {
+                return res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ' });
+            }
+
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.userRole = decoded?.user?.role;

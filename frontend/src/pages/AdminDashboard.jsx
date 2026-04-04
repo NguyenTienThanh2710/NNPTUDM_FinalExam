@@ -6,14 +6,26 @@ import api from '../services/api';
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
+    const [wishlistStats, setWishlistStats] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
+                // Fetch general dashboard stats (Upstream)
                 const res = await api.get('/orders/dashboard');
                 setStats(res.data);
-            } catch (_err) {
+
+                // Fetch wishlist stats (Stashed) using internal api instance
+                const resWishlist = await api.get('/admin/stats/wishlist');
+                if (resWishlist.data.success) {
+                    setWishlistStats(resWishlist.data.data.slice(0, 5)); // Top 5 for dashboard
+                }
+            } catch (err) {
+                console.error('Fetch Stats Error:', err);
                 setStats(null);
+            } finally {
+                setLoading(false);
             }
         };
         fetchStats();
@@ -25,12 +37,9 @@ const AdminDashboard = () => {
         return Math.max(1, ...values);
     }, [monthly]);
 
-    const distribution = useMemo(() => stats?.productDistribution || [], [stats]);
-
     return (
         <AdminLayout
             title="Bảng điều khiển"
-            
             actions={(
                 <>
                     <button className="bg-surface-container-high text-on-surface font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 hover:opacity-80 transition-all duration-300">
@@ -105,7 +114,6 @@ const AdminDashboard = () => {
                         </select>
                     </div>
                     
-                    {/* Placeholder for Chart using CSS Grids/Flex to simulate */}
                     <div className="h-64 flex items-end justify-between gap-2">
                         {(monthly.length > 0 ? monthly : Array.from({ length: 6 }, () => ({ total: 0, month: 0 }))).map((m, idx) => {
                             const pct = Math.round(((m.total || 0) / maxMonthly) * 100);
@@ -127,35 +135,46 @@ const AdminDashboard = () => {
                     </div>
                 </div>
                 
-                <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10 flex flex-col">
-                    <h2 className="text-xl font-bold mb-6">Phân bổ thiết bị</h2>
-                    <div className="space-y-6 flex-1">
-                        {(distribution.length > 0 ? distribution : [{ name: '---', percent: 0 }, { name: '---', percent: 0 }, { name: '---', percent: 0 }]).slice(0, 3).map((d, idx) => {
-                            const icon = idx === 0 ? 'smartphone' : idx === 1 ? 'tablet_mac' : 'watch';
-                            const boxClass = idx === 0 ? 'bg-blue-50' : idx === 1 ? 'bg-slate-50' : 'bg-orange-50';
-                            const iconClass = idx === 0 ? 'text-primary' : idx === 1 ? 'text-slate-500' : 'text-orange-500';
-                            const barClass = idx === 0 ? 'bg-primary' : idx === 1 ? 'bg-secondary' : 'bg-[#bf3003]';
-                            const width = Math.max(0, Math.min(100, d.percent || 0));
-                            return (
-                                <div key={idx} className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl ${boxClass} flex items-center justify-center`}>
-                                        <span className={`material-symbols-outlined ${iconClass}`}>{icon}</span>
+                <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10 flex flex-col h-[500px]">
+                    <h2 className="text-xl font-bold mb-6">Sản phẩm được yêu thích</h2>
+                    <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <span className="animate-spin material-symbols-outlined text-primary text-2xl">sync</span>
+                            </div>
+                        ) : wishlistStats.length > 0 ? (
+                            wishlistStats.map((item, index) => (
+                                <div key={item.product_id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-all">
+                                    <div className="relative">
+                                        <img 
+                                            src={item.images && item.images[0]} 
+                                            alt={item.name}
+                                            className="w-12 h-12 object-cover rounded-lg"
+                                        />
+                                        <span className="absolute -top-1 -left-1 w-5 h-5 bg-primary text-white text-[10px] flex items-center justify-center rounded-full font-bold">
+                                            {index + 1}
+                                        </span>
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between text-sm font-bold mb-1">
-                                            <span>{d.name}</span>
-                                            <span>{width}%</span>
-                                        </div>
-                                        <div className="w-full h-2 bg-surface-container-high rounded-full">
-                                            <div className={`h-full ${barClass} rounded-full`} style={{ width: `${width}%` }}></div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold truncate">{item.name}</p>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-primary text-xs font-black">{item.count}</span>
+                                            <span className="text-[10px] text-outline font-medium uppercase">yêu thích</span>
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ))
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-secondary text-sm">
+                                Chưa có dữ liệu yêu thích.
+                            </div>
+                        )}
                     </div>
                     
-                    <button className="w-full mt-6 py-3 rounded-xl border border-outline-variant/20 text-sm font-bold text-primary hover:bg-primary/5 transition-colors">
+                    <button 
+                        onClick={() => navigate('/admin/stats')}
+                        className="w-full mt-6 py-3 rounded-xl border border-outline-variant/20 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+                    >
                         Xem tất cả số liệu
                     </button>
                 </div>

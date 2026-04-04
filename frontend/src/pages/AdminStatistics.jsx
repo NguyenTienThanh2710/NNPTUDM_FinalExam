@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
+import api from '../services/api';
 
 const AdminStatistics = () => {
+    const [wishlistStats, setWishlistStats] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await api.get('/admin/stats/wishlist');
+                if (res.data.success) {
+                    setWishlistStats(res.data.data);
+                }
+            } catch (err) {
+                console.error('Fetch Stats Error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
     return (
         <AdminLayout
             title="Thống kê & Phân tích"
@@ -112,49 +131,48 @@ const AdminStatistics = () => {
                     </div>
                 </div>
 
-                {/* Top Products */}
-                <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10 h-[450px] flex flex-col items-center justify-center">
+                {/* Top Wishlist Products */}
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10 h-[450px] flex flex-col">
                     <div className="w-full">
-                        <h4 className="text-lg font-bold mb-1">Sản phẩm bán chạy</h4>
-                        <p className="text-xs text-secondary mb-8">Tỷ trọng theo danh mục</p>
+                        <h4 className="text-lg font-bold mb-1">Sản phẩm được yêu thích</h4>
+                        <p className="text-xs text-secondary mb-8">Top sản phẩm trong danh sách ước (Wishlist)</p>
                     </div>
                     
-                    <div className="relative w-48 h-48 mb-8">
-                        {/* Custom SVG Pie Chart */}
-                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" fill="transparent" r="16" stroke="#eeeef0" strokeWidth="4"></circle>
-                            <circle cx="18" cy="18" fill="transparent" r="16" stroke="#003ec7" strokeDasharray="45 100" strokeWidth="4"></circle>
-                            <circle cx="18" cy="18" fill="transparent" r="16" stroke="#0052ff" strokeDasharray="25 100" strokeDashoffset="-45" strokeWidth="4"></circle>
-                            <circle cx="18" cy="18" fill="transparent" r="16" stroke="#b7c4ff" strokeDasharray="30 100" strokeDashoffset="-70" strokeWidth="4"></circle>
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-extrabold">840</span>
-                            <span className="text-[10px] text-outline font-bold">SẢN PHẨM</span>
-                        </div>
-                    </div>
-                    
-                    <div className="w-full space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary"></span>
-                                <span className="text-xs font-medium text-on-surface">iPhone Series</span>
+                    <div className="flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <span className="animate-spin material-symbols-outlined text-primary text-2xl">sync</span>
                             </div>
-                            <span className="text-xs font-bold">45%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary-container"></span>
-                                <span className="text-xs font-medium text-on-surface">Galaxy S Series</span>
+                        ) : wishlistStats.length > 0 ? (
+                            wishlistStats.map((item, index) => (
+                                <div key={item.product_id} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <img 
+                                                src={item.images && item.images[0]} 
+                                                alt={item.name}
+                                                className="w-12 h-12 object-cover rounded-lg shadow-sm"
+                                            />
+                                            <span className="absolute -top-2 -left-2 w-5 h-5 bg-primary text-[10px] text-white flex items-center justify-center rounded-full font-bold">
+                                                {index + 1}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold truncate max-w-[120px]">{item.name}</p>
+                                            <p className="text-[10px] text-secondary font-medium">{item.price.toLocaleString('vi-VN')}đ</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-sm font-extrabold text-primary">{item.count}</span>
+                                        <span className="text-[10px] text-outline font-bold uppercase tracking-tighter">Lượt thích</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-secondary text-sm">
+                                Chưa có dữ liệu yêu thích.
                             </div>
-                            <span className="text-xs font-bold">25%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary-fixed-dim"></span>
-                                <span className="text-xs font-medium text-on-surface">Phụ kiện cao cấp</span>
-                            </div>
-                            <span className="text-xs font-bold">30%</span>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
