@@ -45,7 +45,6 @@ const AdminCustomers = () => {
     const vipThreshold = 5;
     const totalCustomerCount = customerUsers.length;
     const activeCustomerCount = useMemo(() => customerUsers.filter((u) => u.status === 'active').length, [customerUsers]);
-    const lockedCustomerCount = useMemo(() => customerUsers.filter((u) => u.status === 'locked').length, [customerUsers]);
     const vipCustomerCount = useMemo(() => customerUsers.filter((u) => (u.order_count ?? 0) >= vipThreshold).length, [customerUsers]);
 
     const filteredCustomers = useMemo(() => {
