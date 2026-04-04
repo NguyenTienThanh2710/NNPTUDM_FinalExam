@@ -130,6 +130,11 @@ export default function Header() {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
             <input className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Tìm kiếm sản phẩm..." type="text" />
           </div>
+          {user && (
+            <Link to="/orders" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95" title="Lịch sử đơn hàng">
+              <span className="material-symbols-outlined">receipt_long</span>
+            </Link>
+          )}
           <Link to="/cart" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
             <span className="material-symbols-outlined">shopping_cart</span>
           </Link>
