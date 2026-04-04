@@ -36,6 +36,14 @@ const ProductSchema = new Schema({
     is_visible: {
         type: Boolean,
         default: true
+    },
+    avg_rating: {
+        type: Number,
+        default: 0
+    },
+    num_reviews: {
+        type: Number,
+        default: 0
     }
 });
 
