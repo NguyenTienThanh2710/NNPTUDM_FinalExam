@@ -15,6 +15,7 @@ const productRoutes = require('./src/routes/product.route');
 const cartRoutes = require('./src/routes/cart.route');
 const orderRoutes = require('./src/routes/order.route');
 const wishlistRoutes = require('./src/routes/wishlist.route');
+const adminRoutes = require('./src/routes/admin.route');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 
