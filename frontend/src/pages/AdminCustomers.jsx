@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
 
@@ -27,6 +27,10 @@ const getStatusStyle = (status) => {
 
 const AdminCustomers = () => {
     const [customers, setCustomers] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortOption, setSortOption] = useState('newest');
+    const pageSize = 10;
 
     useEffect(() => {
         api.get('/auth/users').then(res => setCustomers(res.data)).catch(console.error);
@@ -34,10 +38,57 @@ const AdminCustomers = () => {
 
     const mapStatus = (s) => s === 'active' ? 'Hoạt động' : 'Đã khóa';
 
+    const customerUsers = useMemo(() => {
+        return customers.filter((u) => u.role_id?.name === 'USER');
+    }, [customers]);
+
+    const vipThreshold = 5;
+    const totalCustomerCount = customerUsers.length;
+    const activeCustomerCount = useMemo(() => customerUsers.filter((u) => u.status === 'active').length, [customerUsers]);
+    const lockedCustomerCount = useMemo(() => customerUsers.filter((u) => u.status === 'locked').length, [customerUsers]);
+    const vipCustomerCount = useMemo(() => customerUsers.filter((u) => (u.order_count ?? 0) >= vipThreshold).length, [customerUsers]);
+
+    const filteredCustomers = useMemo(() => {
+        if (statusFilter === 'active') return customerUsers.filter((u) => u.status === 'active');
+        if (statusFilter === 'locked') return customerUsers.filter((u) => u.status === 'locked');
+        return customerUsers;
+    }, [customerUsers, statusFilter]);
+
+    const sortedCustomers = useMemo(() => {
+        const list = [...filteredCustomers];
+        if (sortOption === 'orders_desc') return list.sort((a, b) => (b.order_count ?? 0) - (a.order_count ?? 0));
+        if (sortOption === 'name_asc') return list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'));
+        return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [filteredCustomers, sortOption]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [statusFilter, sortOption]);
+
+    const pageCount = Math.ceil(sortedCustomers.length / pageSize);
+    const safePageCount = pageCount === 0 ? 1 : pageCount;
+
+    useEffect(() => {
+        if (pageCount === 0) {
+            if (currentPage !== 1) setCurrentPage(1);
+            return;
+        }
+        if (currentPage > pageCount) setCurrentPage(pageCount);
+    }, [currentPage, pageCount]);
+
+    const paginatedCustomers = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return sortedCustomers.slice(startIndex, startIndex + pageSize);
+    }, [currentPage, sortedCustomers]);
+
+    const pageNumbers = useMemo(() => {
+        return Array.from({ length: safePageCount }, (_, idx) => idx + 1);
+    }, [safePageCount]);
+
     return (
         <AdminLayout
             title="Danh sách Người dùng"
-            subtitle={<>Tổng cộng <span className="font-bold text-on-surface">{customers.length}</span> người dùng hiện diện trong hệ thống.</>}
+            
             actions={(
                 <>
                     <button className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors">
@@ -58,10 +109,9 @@ const AdminCustomers = () => {
                         <div className="bg-blue-50 p-3 rounded-xl">
                             <span className="material-symbols-outlined text-blue-700">trending_up</span>
                         </div>
-                        <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.5%</span>
                     </div>
-                    <p className="text-secondary text-sm font-medium">Tỷ lệ mua lại</p>
-                    <p className="text-3xl font-bold mt-1">68.2%</p>
+                    <p className="text-secondary text-sm font-medium">Tổng khách hàng</p>
+                    <p className="text-3xl font-bold mt-1">{totalCustomerCount.toLocaleString()}</p>
                 </div>
                 
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 transition-all shadow-sm">
@@ -71,7 +121,7 @@ const AdminCustomers = () => {
                         </div>
                     </div>
                     <p className="text-secondary text-sm font-medium">Khách hàng VIP</p>
-                    <p className="text-3xl font-bold mt-1">156</p>
+                    <p className="text-3xl font-bold mt-1">{vipCustomerCount.toLocaleString()}</p>
                 </div>
                 
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 transition-all shadow-sm">
@@ -80,8 +130,8 @@ const AdminCustomers = () => {
                             <span className="material-symbols-outlined text-slate-600">mail</span>
                         </div>
                     </div>
-                    <p className="text-secondary text-sm font-medium">Email đã gửi (tháng này)</p>
-                    <p className="text-3xl font-bold mt-1">3,490</p>
+                    <p className="text-secondary text-sm font-medium">Đang hoạt động</p>
+                    <p className="text-3xl font-bold mt-1">{activeCustomerCount.toLocaleString()}</p>
                 </div>
             </div>
 
@@ -89,16 +139,44 @@ const AdminCustomers = () => {
             <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden border border-outline-variant/10 text-left">
                 <div className="p-6 border-b border-surface-container-low flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
-                        <button className="bg-surface-container-high px-4 py-2 rounded-full text-sm font-medium text-primary whitespace-nowrap">Tất cả</button>
-                        <button className="px-4 py-2 rounded-full text-sm font-medium text-secondary hover:bg-slate-50 whitespace-nowrap">Hoạt động</button>
-                        <button className="px-4 py-2 rounded-full text-sm font-medium text-secondary hover:bg-slate-50 whitespace-nowrap">Bị khóa</button>
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter('all')}
+                            className={statusFilter === 'all'
+                                ? "bg-surface-container-high px-4 py-2 rounded-full text-sm font-medium text-primary whitespace-nowrap"
+                                : "px-4 py-2 rounded-full text-sm font-medium text-secondary hover:bg-slate-50 whitespace-nowrap"}
+                        >
+                            Tất cả
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter('active')}
+                            className={statusFilter === 'active'
+                                ? "bg-surface-container-high px-4 py-2 rounded-full text-sm font-medium text-primary whitespace-nowrap"
+                                : "px-4 py-2 rounded-full text-sm font-medium text-secondary hover:bg-slate-50 whitespace-nowrap"}
+                        >
+                            Hoạt động
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter('locked')}
+                            className={statusFilter === 'locked'
+                                ? "bg-surface-container-high px-4 py-2 rounded-full text-sm font-medium text-primary whitespace-nowrap"
+                                : "px-4 py-2 rounded-full text-sm font-medium text-secondary hover:bg-slate-50 whitespace-nowrap"}
+                        >
+                            Bị khóa
+                        </button>
                     </div>
                     <div className="flex items-center gap-2 whitespace-nowrap">
                         <span className="text-sm text-secondary">Sắp xếp theo:</span>
-                        <select className="text-sm font-semibold bg-transparent border-none focus:ring-0 cursor-pointer pl-0">
-                            <option>Mới nhất</option>
-                            <option>Tổng đơn hàng cao nhất</option>
-                            <option>Tên (A-Z)</option>
+                        <select
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value)}
+                            className="text-sm font-semibold bg-transparent border-none focus:ring-0 cursor-pointer pl-0"
+                        >
+                            <option value="newest">Mới nhất</option>
+                            <option value="orders_desc">Tổng đơn hàng cao nhất</option>
+                            <option value="name_asc">Tên (A-Z)</option>
                         </select>
                     </div>
                 </div>
@@ -115,7 +193,7 @@ const AdminCustomers = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-surface-container-low">
-                            {customers.map((customer) => {
+                            {paginatedCustomers.map((customer) => {
                                 const statusVi = mapStatus(customer.status);
                                 const style = getStatusStyle(statusVi);
                                 return (
@@ -136,7 +214,7 @@ const AdminCustomers = () => {
                                             <p className="text-xs text-secondary mt-0.5">{customer.role_id?.name}</p>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <p className="text-sm font-bold text-on-surface">N/A</p>
+                                            <p className="text-sm font-bold text-on-surface">{(customer.order_count ?? 0).toLocaleString()}</p>
                                         </td>
                                         <td className="px-6 py-5">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${style.bg} ${style.text}`}>
@@ -157,27 +235,52 @@ const AdminCustomers = () => {
                                     </tr>
                                 )
                             })}
+                            {paginatedCustomers.length === 0 && (
+                                <tr>
+                                    <td className="px-6 py-10 text-center text-sm text-on-surface-variant" colSpan={5}>
+                                        Không có khách hàng nào
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
                 
                 {/* Pagination */}
-                <div className="px-6 py-4 flex items-center justify-between bg-surface-container-low/20">
-                    <p className="text-xs text-secondary font-medium">Hiển thị <span className="font-bold text-on-surface">tất cả</span> <span className="font-bold text-on-surface">{customers.length}</span></p>
-                    <div className="flex items-center gap-1">
-                        <button className="p-2 rounded-lg hover:bg-slate-100 text-secondary disabled:opacity-30" disabled>
-                            <span className="material-symbols-outlined">chevron_left</span>
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-xs font-bold">2</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-xs font-bold">3</button>
-                        <span className="px-2 text-secondary">...</span>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-xs font-bold">129</button>
-                        <button className="p-2 rounded-lg hover:bg-slate-100 text-secondary">
-                            <span className="material-symbols-outlined">chevron_right</span>
-                        </button>
+                {pageCount > 1 && (
+                    <div className="px-6 py-4 flex items-center justify-end bg-surface-container-low/20">
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                className="p-2 rounded-lg hover:bg-slate-100 text-secondary disabled:opacity-30"
+                                disabled={currentPage <= 1}
+                            >
+                                <span className="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            {pageNumbers.map((page) => (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    onClick={() => setCurrentPage(page)}
+                                    className={page === currentPage
+                                        ? "w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold"
+                                        : "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-xs font-bold"}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.min(safePageCount, p + 1))}
+                                className="p-2 rounded-lg hover:bg-slate-100 text-secondary disabled:opacity-30"
+                                disabled={currentPage >= safePageCount}
+                            >
+                                <span className="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </AdminLayout>
     );

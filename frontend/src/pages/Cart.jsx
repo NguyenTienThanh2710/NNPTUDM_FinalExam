@@ -1,12 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
 const Cart = () => {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState(null);
+    const [removeConfirmItemId, setRemoveConfirmItemId] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const incoming = location.state?.notice;
+        if (!incoming) return;
+        setNotice(incoming);
+        navigate(location.pathname, { replace: true, state: {} });
+    }, [location.pathname, location.state, navigate]);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
 
     const fetchCart = async () => {
         try {
@@ -29,18 +45,24 @@ const Cart = () => {
             await api.put(`/cart/${id}`, { quantity: newQuantity });
             fetchCart();
         } catch (_err) {
-            alert('Cập nhật số lượng thất bại');
+            setNotice({ type: 'error', text: 'Cập nhật số lượng thất bại' });
         }
     };
 
     const handleRemoveItem = async (id) => {
-        if (window.confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-            try {
-                await api.delete(`/cart/${id}`);
-                fetchCart();
-            } catch (_err) {
-                alert('Xóa sản phẩm thất bại');
-            }
+        setRemoveConfirmItemId(id);
+    };
+
+    const confirmRemoveItem = async () => {
+        const id = removeConfirmItemId;
+        if (!id) return;
+        try {
+            await api.delete(`/cart/${id}`);
+            fetchCart();
+        } catch (_err) {
+            setNotice({ type: 'error', text: 'Xóa sản phẩm thất bại' });
+        } finally {
+            setRemoveConfirmItemId(null);
         }
     };
 
@@ -48,10 +70,9 @@ const Cart = () => {
         e?.preventDefault();
         try {
             await api.post('/orders');
-            alert('Đặt hàng thành công!');
-            navigate('/orders'); 
+            navigate('/orders', { state: { notice: { type: 'success', text: 'Đặt hàng thành công!' } } }); 
         } catch (err) {
-            alert(err.response?.data?.message || 'Đặt hàng thất bại');
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Đặt hàng thất bại' });
         }
     };
 
@@ -75,6 +96,46 @@ const Cart = () => {
 
     return (
         <main className="max-w-7xl mx-auto px-6 pt-32 pb-20 min-h-screen text-left">
+            {removeConfirmItemId && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setRemoveConfirmItemId(null)} />
+                    <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-outline-variant/20 shadow-2xl overflow-hidden">
+                        <div className="p-6">
+                            <h3 className="text-lg font-black text-on-surface">Xác nhận xoá</h3>
+                            <p className="mt-2 text-sm text-on-surface-variant">Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?</p>
+                        </div>
+                        <div className="px-6 pb-6 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setRemoveConfirmItemId(null)}
+                                className="px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface font-bold hover:opacity-90 active:scale-95 transition-all"
+                            >
+                                Huỷ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmRemoveItem}
+                                className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 active:scale-95 transition-all"
+                            >
+                                Xoá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {notice && (
+                <div className={`fixed top-24 right-6 z-50 max-w-sm w-[min(380px,calc(100vw-48px))] rounded-2xl px-4 py-3 shadow-xl border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-lg">
+                            {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                        </span>
+                        <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                        <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Page Title */}
             <header className="mb-12">
                 <h1 className="text-4xl font-black tracking-tight mb-2">Giỏ Hàng Của Bạn</h1>
@@ -86,7 +147,7 @@ const Cart = () => {
                     <span className="material-symbols-outlined text-outline text-6xl mb-4">shopping_cart</span>
                     <h3 className="text-2xl font-bold mb-4">Giỏ hàng trống</h3>
                     <Link to="/products" className="px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-container hover:text-on-primary-container transition-all">
-                        Đi mua sắm ngay
+                        Tiếp tục mua sắm
                     </Link>
                 </div>
             ) : (
@@ -102,7 +163,7 @@ const Cart = () => {
                                         {item.product_id.images && item.product_id.images[0] ? (
                                             <img alt={item.product_id.name} className="w-full h-full object-cover" src={item.product_id.images[0]} />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-outline">No img</div>
+                                            <div className="w-full h-full flex items-center justify-center text-outline">Chưa có ảnh</div>
                                         )}
                                     </div>
                                     <div className="flex-grow w-full">

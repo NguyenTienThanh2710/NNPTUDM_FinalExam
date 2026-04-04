@@ -22,7 +22,7 @@ const BrandList = () => {
             <section className="section-block">
                 <div className="section-heading">
                     <div>
-                        <span className="eyebrow">Brands</span>
+                        <span className="eyebrow">Thương hiệu</span>
                         <h2>Danh Sách Thương Hiệu</h2>
                     </div>
                 </div>

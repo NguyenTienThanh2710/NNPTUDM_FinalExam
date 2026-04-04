@@ -1,4 +1,5 @@
 const Brand = require('../models/brand.model');
+const Product = require('../models/product.model');
 
 // @desc    Create a brand
 // @route   POST /api/brands
@@ -11,7 +12,7 @@ const createBrand = async (req, res) => {
         const createdBrand = await brand.save();
         res.status(201).json(createdBrand);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -21,9 +22,13 @@ const createBrand = async (req, res) => {
 const getBrands = async (req, res) => {
     try {
         const brands = await Brand.find({});
-        res.json(brands);
+        const counts = await Product.aggregate([
+            { $group: { _id: '$brand_id', count: { $sum: 1 } } }
+        ]);
+        const countByBrandId = new Map(counts.map((c) => [String(c._id), c.count]));
+        res.json(brands.map((b) => ({ ...b.toObject(), product_count: countByBrandId.get(String(b._id)) || 0 })));
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -37,10 +42,10 @@ const getBrandById = async (req, res) => {
         if (brand) {
             res.json(brand);
         } else {
-            res.status(404).json({ message: 'Brand not found' });
+            res.status(404).json({ message: 'Không tìm thấy thương hiệu' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -60,10 +65,10 @@ const updateBrand = async (req, res) => {
             const updatedBrand = await brand.save();
             res.json(updatedBrand);
         } else {
-            res.status(404).json({ message: 'Brand not found' });
+            res.status(404).json({ message: 'Không tìm thấy thương hiệu' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -76,12 +81,12 @@ const deleteBrand = async (req, res) => {
 
         if (brand) {
             await brand.remove();
-            res.json({ message: 'Brand removed' });
+            res.json({ message: 'Đã xoá thương hiệu' });
         } else {
-            res.status(404).json({ message: 'Brand not found' });
+            res.status(404).json({ message: 'Không tìm thấy thương hiệu' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 

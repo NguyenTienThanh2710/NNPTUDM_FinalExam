@@ -13,7 +13,7 @@ const Wishlist = () => {
                 setWishlist(response.data);
                 setLoading(false);
             } catch (err) {
-                console.error('Error fetching wishlist:', err);
+                console.error('Lỗi khi tải danh sách yêu thích:', err);
                 setLoading(false);
             }
         };
@@ -27,7 +27,7 @@ const Wishlist = () => {
             // Update local state by removing the item
             setWishlist(wishlist.filter(item => item._id !== productId));
         } catch (err) {
-            console.error('Error removing from wishlist:', err);
+            console.error('Lỗi khi xoá khỏi danh sách yêu thích:', err);
         }
     };
 
@@ -43,20 +43,20 @@ const Wishlist = () => {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-12 px-6">
             <div className="max-w-7xl mx-auto">
                 <header className="mb-12">
-                    <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white mb-2">My Wishlist</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Keep track of the devices you love.</p>
+                    <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white mb-2">Danh sách yêu thích</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Lưu lại những sản phẩm bạn yêu thích.</p>
                 </header>
 
                 {wishlist.length === 0 ? (
                     <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl p-12 text-center border border-white/20 shadow-xl">
                         <span className="material-symbols-outlined text-7xl text-slate-300 dark:text-slate-700 mb-4">favorite</span>
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Your wishlist is empty</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mb-8">Start adding some amazing phones to your list!</p>
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Danh sách yêu thích đang trống</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mb-8">Hãy thêm một vài sản phẩm vào danh sách của bạn!</p>
                         <Link 
                             to="/products" 
                             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/25"
                         >
-                            Go Shopping
+                            Tiếp tục mua sắm
                         </Link>
                     </div>
                 ) : (
@@ -76,7 +76,7 @@ const Wishlist = () => {
                                 <Link to={`/products/${product._id}`}>
                                     <div className="aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-800">
                                         <img 
-                                            src={product.images && product.images[0] ? product.images[0] : 'https://placehold.co/600x800?text=No+Image'} 
+                                            src={product.images && product.images[0] ? product.images[0] : 'https://placehold.co/600x800?text=Chua+co+anh'} 
                                             alt={product.name}
                                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                         />
@@ -88,7 +88,7 @@ const Wishlist = () => {
                                         </p>
                                         <div className="flex items-center justify-between">
                                             <span className={`text-xs font-bold px-3 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                                                {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                                                {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                                             </span>
                                             <span className="material-symbols-outlined text-slate-400 group-hover:text-blue-600 transition-colors duration-300">arrow_forward</span>
                                         </div>

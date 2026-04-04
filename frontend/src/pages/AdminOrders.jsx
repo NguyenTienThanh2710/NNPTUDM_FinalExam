@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
 
@@ -51,6 +51,10 @@ const getAvatarColor = (name) => {
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortOption, setSortOption] = useState('newest');
+    const pageSize = 10;
 
     useEffect(() => {
         api.get('/orders/all').then(res => setOrders(res.data)).catch(console.error);
@@ -61,10 +65,56 @@ const AdminOrders = () => {
         return map[status] || status;
     };
 
+    const filteredOrders = useMemo(() => {
+        if (statusFilter === 'pending') return orders.filter((o) => o.status === 'pending');
+        if (statusFilter === 'shipping') return orders.filter((o) => o.status === 'shipped' || o.status === 'processing');
+        if (statusFilter === 'delivered') return orders.filter((o) => o.status === 'delivered');
+        if (statusFilter === 'cancelled') return orders.filter((o) => o.status === 'cancelled');
+        return orders;
+    }, [orders, statusFilter]);
+
+    const sortedOrders = useMemo(() => {
+        const list = [...filteredOrders];
+        if (sortOption === 'oldest') {
+            return list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        }
+        if (sortOption === 'price_desc') {
+            return list.sort((a, b) => (b.total_price ?? 0) - (a.total_price ?? 0));
+        }
+        if (sortOption === 'price_asc') {
+            return list.sort((a, b) => (a.total_price ?? 0) - (b.total_price ?? 0));
+        }
+        return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }, [filteredOrders, sortOption]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [statusFilter, sortOption]);
+
+    const pageCount = Math.ceil(sortedOrders.length / pageSize);
+    const safePageCount = pageCount === 0 ? 1 : pageCount;
+
+    useEffect(() => {
+        if (pageCount === 0) {
+            if (currentPage !== 1) setCurrentPage(1);
+            return;
+        }
+        if (currentPage > pageCount) setCurrentPage(pageCount);
+    }, [currentPage, pageCount]);
+
+    const paginatedOrders = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return sortedOrders.slice(startIndex, startIndex + pageSize);
+    }, [currentPage, sortedOrders]);
+
+    const pageNumbers = useMemo(() => {
+        return Array.from({ length: safePageCount }, (_, idx) => idx + 1);
+    }, [safePageCount]);
+
     return (
         <AdminLayout
             title="Quản lý Đơn hàng"
-            subtitle="Theo dõi và cập nhật trạng thái đơn hàng thời gian thực."
+            
             actions={
                 <button className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-2 active:scale-95">
                     <span className="material-symbols-outlined text-sm">download</span>
@@ -77,41 +127,85 @@ const AdminOrders = () => {
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-1">
                     <span className="text-xs font-bold text-secondary tracking-widest uppercase">Tổng đơn hàng</span>
                     <span className="text-2xl font-bold text-on-surface">{orders.length}</span>
-                    <span className="text-xs text-green-600 flex items-center gap-1 font-medium">+12% so với tháng trước</span>
+                    <span className="text-xs text-slate-500 font-medium">Cập nhật theo dữ liệu hệ thống</span>
                 </div>
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-1">
                     <span className="text-xs font-bold text-secondary tracking-widest uppercase">Chờ xử lý</span>
                     <span className="text-2xl font-bold text-on-surface">{orders.filter(o => o.status === 'pending').length}</span>
-                    <span className="text-xs text-amber-600 font-medium italic">Yêu cầu xử lý ngay</span>
+                    <span className="text-xs text-slate-500 font-medium">Cần xác nhận</span>
                 </div>
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-1">
                     <span className="text-xs font-bold text-secondary tracking-widest uppercase">Đang giao</span>
                     <span className="text-2xl font-bold text-on-surface">{orders.filter(o => o.status === 'shipped' || o.status === 'processing').length}</span>
-                    <span className="text-xs text-blue-600 font-medium">Đang trong lộ trình</span>
+                    <span className="text-xs text-slate-500 font-medium">Đang xử lý / đang giao</span>
                 </div>
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-1">
                     <span className="text-xs font-bold text-secondary tracking-widest uppercase">Tổng Doanh thu</span>
-                    <span className="text-2xl font-bold text-on-surface">{(orders.filter(o => o.status === 'delivered').reduce((sum, order) => sum + order.total_price, 0) || orders.reduce((sum, order) => sum + order.total_price, 0)).toLocaleString()} ₫</span>
-                    <span className="text-xs text-slate-500 font-medium">Hôm nay, {new Date().toLocaleDateString('vi-VN')}</span>
+                    <span className="text-2xl font-bold text-on-surface">{orders.filter(o => o.status !== 'cancelled').reduce((sum, order) => sum + (order.total_price || 0), 0).toLocaleString()} ₫</span>
+                    <span className="text-xs text-slate-500 font-medium">Cập nhật: {new Date().toLocaleDateString('vi-VN')}</span>
                 </div>
             </div>
 
             {/* Filters Section */}
             <div className="bg-surface-container-low p-4 rounded-2xl mb-6 flex flex-wrap items-center justify-between gap-4 text-left">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                    <button className="px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold whitespace-nowrap">Tất cả</button>
-                    <button className="px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap">Chờ xác nhận</button>
-                    <button className="px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap">Đang giao</button>
-                    <button className="px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap">Đã giao</button>
-                    <button className="px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap text-error">Đã hủy</button>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter('all')}
+                        className={statusFilter === 'all'
+                            ? "px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold whitespace-nowrap"
+                            : "px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap"}
+                    >
+                        Tất cả
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter('pending')}
+                        className={statusFilter === 'pending'
+                            ? "px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold whitespace-nowrap"
+                            : "px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap"}
+                    >
+                        Chờ xác nhận
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter('shipping')}
+                        className={statusFilter === 'shipping'
+                            ? "px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold whitespace-nowrap"
+                            : "px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap"}
+                    >
+                        Đang giao
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter('delivered')}
+                        className={statusFilter === 'delivered'
+                            ? "px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold whitespace-nowrap"
+                            : "px-5 py-2 rounded-full bg-surface-container-lowest text-secondary text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap"}
+                    >
+                        Đã giao
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter('cancelled')}
+                        className={statusFilter === 'cancelled'
+                            ? "px-5 py-2 rounded-full bg-error text-white text-sm font-semibold whitespace-nowrap"
+                            : "px-5 py-2 rounded-full bg-surface-container-lowest text-error text-sm font-medium hover:bg-slate-100 transition-colors whitespace-nowrap"}
+                    >
+                        Đã hủy
+                    </button>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <select className="appearance-none bg-surface-container-lowest border-none rounded-xl px-4 py-2 pr-10 text-sm font-medium text-on-surface focus:ring-2 focus:ring-primary/20 shadow-sm cursor-pointer">
-                            <option>Sắp xếp: Mới nhất</option>
-                            <option>Sắp xếp: Cũ nhất</option>
-                            <option>Giá: Cao đến thấp</option>
-                            <option>Giá: Thấp đến cao</option>
+                        <select
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value)}
+                            className="appearance-none bg-surface-container-lowest border-none rounded-xl px-4 py-2 pr-10 text-sm font-medium text-on-surface focus:ring-2 focus:ring-primary/20 shadow-sm cursor-pointer"
+                        >
+                            <option value="newest">Sắp xếp: Mới nhất</option>
+                            <option value="oldest">Sắp xếp: Cũ nhất</option>
+                            <option value="price_desc">Giá: Cao đến thấp</option>
+                            <option value="price_asc">Giá: Thấp đến cao</option>
                         </select>
                         <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-sm">expand_more</span>
                     </div>
@@ -133,7 +227,7 @@ const AdminOrders = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {orders.map((row) => {
+                            {paginatedOrders.map((row) => {
                                 const style = statusStyles(row.status);
                                 const username = row.user_id?.name || 'Unknown';
                                 const avatarColor = getAvatarColor(username);
@@ -179,22 +273,40 @@ const AdminOrders = () => {
                 </div>
                 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-                    <span className="text-xs text-secondary font-medium">Hiển thị {orders.length} đơn hàng</span>
-                    <div className="flex items-center gap-1">
-                        <button className="p-1 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30" disabled>
-                            <span className="material-symbols-outlined text-xl">chevron_left</span>
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary text-xs font-bold">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-xs font-bold">2</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-xs font-bold">3</button>
-                        <span className="px-2 text-slate-400">...</span>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-xs font-bold">129</button>
-                        <button className="p-1 rounded-lg hover:bg-slate-200 transition-colors">
-                            <span className="material-symbols-outlined text-xl">chevron_right</span>
-                        </button>
+                {pageCount > 1 && (
+                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/30">
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                className="p-1 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
+                                disabled={currentPage <= 1}
+                            >
+                                <span className="material-symbols-outlined text-xl">chevron_left</span>
+                            </button>
+                            {pageNumbers.map((page) => (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    onClick={() => setCurrentPage(page)}
+                                    className={page === currentPage
+                                        ? "w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary text-xs font-bold"
+                                        : "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-xs font-bold"}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.min(safePageCount, p + 1))}
+                                className="p-1 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
+                                disabled={currentPage >= safePageCount}
+                            >
+                                <span className="material-symbols-outlined text-xl">chevron_right</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* FAB */}

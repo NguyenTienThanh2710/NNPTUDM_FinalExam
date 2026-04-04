@@ -9,6 +9,17 @@ const OrderDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const mapStatus = (status) => {
+        const mapping = {
+            pending: 'Chờ xử lý',
+            processing: 'Đang xử lý',
+            shipped: 'Đang giao',
+            delivered: 'Đã giao',
+            cancelled: 'Đã huỷ'
+        };
+        return mapping[status] || status;
+    };
+
     useEffect(() => {
         const fetchOrderDetail = async () => {
             try {
@@ -36,14 +47,14 @@ const OrderDetail = () => {
                 <div className="detail-shell" style={{ marginTop: '16px' }}>
                     <div className="section-heading" style={{ marginBottom: '16px' }}>
                         <div>
-                            <span className="eyebrow">Order detail</span>
+                            <span className="eyebrow">Chi tiết đơn hàng</span>
                             <h2>Chi Tiết Đơn Hàng</h2>
                         </div>
                     </div>
                     <div className="meta-grid" style={{ marginTop: 0 }}>
                         <div className="meta-box"><div className="meta-label">Mã đơn hàng</div><strong>{order._id}</strong></div>
                         <div className="meta-box"><div className="meta-label">Ngày đặt</div><strong>{new Date(order.created_at).toLocaleString()}</strong></div>
-                        <div className="meta-box"><div className="meta-label">Trạng thái</div><strong>{order.status}</strong></div>
+                        <div className="meta-box"><div className="meta-label">Trạng thái</div><strong>{mapStatus(order.status)}</strong></div>
                     </div>
                     <p className="detail-price" style={{ marginTop: '6px' }}>{order.total_price.toLocaleString()} VNĐ</p>
                 </div>

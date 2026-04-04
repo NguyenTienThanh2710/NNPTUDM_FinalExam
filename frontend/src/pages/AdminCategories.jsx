@@ -1,25 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState([]);
+    const [formName, setFormName] = useState('');
+    const [formDescription, setFormDescription] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [editingCategoryId, setEditingCategoryId] = useState(null);
+    const [deleteConfirmCategoryId, setDeleteConfirmCategoryId] = useState(null);
+    const [notice, setNotice] = useState(null);
+    const formRef = useRef(null);
+    const nameInputRef = useRef(null);
 
     useEffect(() => {
         api.get('/categories').then(res => setCategories(res.data)).catch(console.error);
     }, []);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
+    const fetchCategories = async () => {
+        const res = await api.get('/categories');
+        setCategories(res.data);
+    };
+
+    const handleOpenCreate = () => {
+        setFormName('');
+        setFormDescription('');
+        setEditingCategoryId(null);
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(() => nameInputRef.current?.focus(), 150);
+    };
+
+    const handleOpenEdit = (category) => {
+        setFormName(category?.name || '');
+        setFormDescription(category?.description || '');
+        setEditingCategoryId(category?._id || null);
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(() => nameInputRef.current?.focus(), 150);
+    };
+
+    const handleSaveCategory = async (e) => {
+        e?.preventDefault();
+        if (isSaving) return;
+
+        const payload = {
+            name: formName.trim(),
+            description: formDescription.trim()
+        };
+
+        if (!payload.name) {
+            setNotice({ type: 'error', text: 'Vui lòng nhập tên danh mục.' });
+            nameInputRef.current?.focus();
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            if (editingCategoryId) {
+                await api.put(`/categories/${editingCategoryId}`, payload);
+            } else {
+                await api.post('/categories', payload);
+            }
+            await fetchCategories();
+            setNotice({ type: 'success', text: editingCategoryId ? 'Cập nhật danh mục thành công' : 'Thêm danh mục thành công' });
+            setFormName('');
+            setFormDescription('');
+            setEditingCategoryId(null);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || (editingCategoryId ? 'Cập nhật danh mục thất bại' : 'Thêm danh mục thất bại') });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteCategory = (categoryId) => {
+        setDeleteConfirmCategoryId(categoryId);
+    };
+
+    const confirmDeleteCategory = async () => {
+        const categoryId = deleteConfirmCategoryId;
+        if (!categoryId) return;
+        try {
+            await api.delete(`/categories/${categoryId}`);
+            await fetchCategories();
+            setNotice({ type: 'success', text: 'Đã xoá danh mục' });
+            if (editingCategoryId === categoryId) {
+                setEditingCategoryId(null);
+                setFormName('');
+                setFormDescription('');
+            }
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Xoá danh mục thất bại' });
+        } finally {
+            setDeleteConfirmCategoryId(null);
+        }
+    };
+
+    const handleReset = () => {
+        setFormName('');
+        setFormDescription('');
+        setEditingCategoryId(null);
+    };
+
     return (
         <AdminLayout
             title="Quản lý Danh mục"
-            subtitle="Tổ chức và phân loại các dòng sản phẩm trong showroom của bạn."
+            
             actions={
-                <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                <button onClick={handleOpenCreate} className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
                     <span className="material-symbols-outlined">add_circle</span>
                     Thêm danh mục mới
                 </button>
             }
         >
             <div className="grid grid-cols-12 gap-8 text-left">
+                {notice && (
+                    <div className={`col-span-12 rounded-xl px-4 py-3 shadow-sm border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                        <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-lg">
+                                {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                            </span>
+                            <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                            <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                                <span className="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {/* Category Table Section */}
                 <div className="col-span-12 lg:col-span-8">
                     <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
@@ -55,18 +167,26 @@ const AdminCategories = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5 text-sm text-secondary line-clamp-1 max-w-[150px] mt-2 block border-0">{cat.description}</td>
-                                            <td className="px-6 py-5 text-sm font-bold text-on-surface text-center lg:table-cell">N/A</td>
+                                            <td className="px-6 py-5 text-sm font-bold text-on-surface text-center lg:table-cell">{(cat.product_count ?? 0).toLocaleString()}</td>
                                             <td className="px-6 py-5">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                                                    Hiển thị
-                                                </span>
+                                                {cat.product_count > 0 ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        Có sản phẩm
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                        Trống
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button className="p-2 hover:bg-primary-fixed text-primary rounded-lg transition-colors" title="Chỉnh sửa">
+                                                    <button type="button" onClick={() => handleOpenEdit(cat)} className="p-2 hover:bg-primary-fixed text-primary rounded-lg transition-colors" title="Chỉnh sửa">
                                                         <span className="material-symbols-outlined text-xl">edit_note</span>
                                                     </button>
-                                                    <button className="p-2 hover:bg-error-container text-error rounded-lg transition-colors" title="Xóa">
+                                                    <button type="button" onClick={() => handleDeleteCategory(cat._id)} className="p-2 hover:bg-error-container text-error rounded-lg transition-colors" title="Xóa">
                                                         <span className="material-symbols-outlined text-xl">delete</span>
                                                     </button>
                                                 </div>
@@ -81,44 +201,40 @@ const AdminCategories = () => {
 
                 {/* Quick Add Form Section */}
                 <div className="col-span-12 lg:col-span-4">
-                    <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 sticky top-24">
+                    <div ref={formRef} className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 sticky top-24">
                         <div className="px-6 py-5 border-b border-surface-container bg-white rounded-t-xl">
                             <h3 className="font-bold text-on-surface flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">add_task</span>
                                 Thêm / Sửa nhanh
                             </h3>
                         </div>
-                        <form className="p-6 space-y-5">
+                        <form onSubmit={handleSaveCategory} className="p-6 space-y-5">
                             <div>
                                 <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Tên danh mục</label>
-                                <input className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="VD: iPhone 15 Series" type="text" />
+                                <input
+                                    ref={nameInputRef}
+                                    value={formName}
+                                    onChange={(e) => setFormName(e.target.value)}
+                                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                                    placeholder="VD: iPhone 15 Series"
+                                    type="text"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Mô tả chi tiết</label>
-                                <textarea className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none" placeholder="Nhập mô tả ngắn gọn về danh mục sản phẩm..." rows="4"></textarea>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Trạng thái hiển thị</label>
-                                <div className="flex gap-4">
-                                    <label className="flex-1 cursor-pointer">
-                                        <input defaultChecked className="hidden peer" name="status" type="radio" />
-                                        <div className="text-center py-2 rounded-xl border-2 border-transparent bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary-fixed peer-checked:text-primary transition-all font-semibold text-sm">
-                                            Hiển thị
-                                        </div>
-                                    </label>
-                                    <label className="flex-1 cursor-pointer">
-                                        <input className="hidden peer" name="status" type="radio" />
-                                        <div className="text-center py-2 rounded-xl border-2 border-transparent bg-surface-container-low peer-checked:border-secondary peer-checked:bg-secondary-container peer-checked:text-on-secondary-container transition-all font-semibold text-sm">
-                                            Ẩn tạm
-                                        </div>
-                                    </label>
-                                </div>
+                                <textarea
+                                    value={formDescription}
+                                    onChange={(e) => setFormDescription(e.target.value)}
+                                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                                    placeholder="Nhập mô tả ngắn gọn về danh mục sản phẩm..."
+                                    rows="4"
+                                />
                             </div>
                             <div className="pt-4 flex flex-col gap-3">
-                                <button className="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all" type="button">
-                                    Lưu danh mục
+                                <button disabled={isSaving} className="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
+                                    {isSaving ? 'Đang lưu...' : (editingCategoryId ? 'Cập nhật danh mục' : 'Lưu danh mục')}
                                 </button>
-                                <button className="w-full bg-surface-container-high text-on-surface-variant font-bold py-3 rounded-xl hover:bg-surface-container-highest transition-colors" type="reset">
+                                <button onClick={handleReset} className="w-full bg-surface-container-high text-on-surface-variant font-bold py-3 rounded-xl hover:bg-surface-container-highest transition-colors" type="button">
                                     Làm mới
                                 </button>
                             </div>
@@ -126,6 +242,34 @@ const AdminCategories = () => {
                     </div>
                 </div>
             </div>
+
+            {deleteConfirmCategoryId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 py-10">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirmCategoryId(null)} />
+                    <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-outline-variant/20 shadow-2xl overflow-hidden">
+                        <div className="p-6">
+                            <h3 className="text-lg font-black text-on-surface">Xác nhận xoá</h3>
+                            <p className="mt-2 text-sm text-on-surface-variant">Bạn có chắc muốn xoá danh mục này không?</p>
+                        </div>
+                        <div className="px-6 pb-6 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteConfirmCategoryId(null)}
+                                className="px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface font-bold hover:opacity-90 active:scale-95 transition-all"
+                            >
+                                Huỷ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteCategory}
+                                className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 active:scale-95 transition-all"
+                            >
+                                Xoá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Ribbon */}
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">

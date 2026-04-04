@@ -1,5 +1,6 @@
 const User = require('../models/user.model');
 const Role = require('../models/role.model');
+const Order = require('../models/order.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
@@ -16,13 +17,13 @@ const register = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
+            return res.status(400).json({ msg: 'Tài khoản đã tồn tại' });
         }
 
         // Retrieve default USER role
         const userRole = await Role.findOne({ name: 'USER' });
         if (!userRole) {
-            return res.status(500).json({ msg: 'Server setup error: Roles not defined' });
+            return res.status(500).json({ msg: 'Lỗi cấu hình hệ thống: Chưa khởi tạo Roles' });
         }
 
         // Create new user
@@ -60,7 +61,7 @@ const register = async (req, res) => {
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).send('Lỗi máy chủ');
     }
 };
 
@@ -75,19 +76,19 @@ const login = async (req, res) => {
         let user = await User.findOne({ email }).populate('role_id');
 
         if (!user) {
-            return res.status(400).json({ msg: 'Invalid credentials' });
+            return res.status(400).json({ msg: 'Thông tin đăng nhập không đúng' });
         }
 
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({ msg: 'Invalid credentials' });
+            return res.status(400).json({ msg: 'Thông tin đăng nhập không đúng' });
         }
         
         // Check if account is active
         if (user.status === 'locked') {
-            return res.status(403).json({ msg: 'Account is locked' });
+            return res.status(403).json({ msg: 'Tài khoản đã bị khóa' });
         }
 
         // Create and return JWT
@@ -117,7 +118,7 @@ const login = async (req, res) => {
         );
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).send('Lỗi máy chủ');
     }
 };
 
@@ -127,7 +128,11 @@ const login = async (req, res) => {
 const getUsers = async (req, res) => {
     try {
         const users = await User.find({}).select('-password').populate('role_id', 'name');
-        res.json(users);
+        const orderCounts = await Order.aggregate([
+            { $group: { _id: '$user_id', count: { $sum: 1 } } }
+        ]);
+        const countByUserId = new Map(orderCounts.map((c) => [String(c._id), c.count]));
+        res.json(users.map((u) => ({ ...u.toObject(), order_count: countByUserId.get(String(u._id)) || 0 })));
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server khi fetch users' });
     }
@@ -154,7 +159,7 @@ const googleLogin = async (req, res) => {
             // Register new user from Google info
             const userRole = await Role.findOne({ name: 'USER' });
             if (!userRole) {
-                return res.status(500).json({ msg: 'Server setup error: Roles not defined' });
+                return res.status(500).json({ msg: 'Lỗi cấu hình hệ thống: Chưa khởi tạo Roles' });
             }
 
             // Create new user (random password since they login via Google)
@@ -175,7 +180,7 @@ const googleLogin = async (req, res) => {
 
         // Check if account is active
         if (user.status === 'locked') {
-            return res.status(403).json({ msg: 'Account is locked' });
+            return res.status(403).json({ msg: 'Tài khoản đã bị khóa' });
         }
 
         // Create and return JWT
@@ -206,8 +211,8 @@ const googleLogin = async (req, res) => {
         );
 
     } catch (err) {
-        console.error('Google Login Error:', err.message);
-        res.status(400).json({ msg: 'Google authentication failed' });
+        console.error('Lỗi đăng nhập Google:', err.message);
+        res.status(400).json({ msg: 'Xác thực Google thất bại' });
     }
 };
 
@@ -231,7 +236,7 @@ const getProfile = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error');
+        res.status(500).send('Lỗi máy chủ');
     }
 };
 
@@ -267,8 +272,8 @@ const updateProfile = async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Update Profile Error:', err.message);
-        res.status(500).send('Server error');
+        console.error('Lỗi cập nhật hồ sơ:', err.message);
+        res.status(500).send('Lỗi máy chủ');
     }
 };
 

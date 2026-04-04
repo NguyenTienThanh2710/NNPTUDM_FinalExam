@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import wishlistService from '../services/wishlist.service';
-import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [selectedBrandIds, setSelectedBrandIds] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+    const [sortOption, setSortOption] = useState('popular');
+    const [notice, setNotice] = useState(null);
     const [wishlistedIds, setWishlistedIds] = useState([]);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -17,6 +23,26 @@ const ProductList = () => {
                 setProducts(res.data);
             } catch (_err) {
                 setError('Không thể lấy danh sách sản phẩm');
+            }
+        };
+
+        const fetchBrands = async () => {
+            try {
+                const res = await api.get('/brands');
+                setBrands(res.data);
+                setSelectedBrandIds(res.data.map((b) => b._id));
+            } catch (_err) {
+                setBrands([]);
+                setSelectedBrandIds([]);
+            }
+        };
+
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/categories');
+                setCategories(res.data);
+            } catch (_err) {
+                setCategories([]);
             }
         };
 
@@ -33,8 +59,48 @@ const ProductList = () => {
         };
 
         fetchProducts();
+        fetchBrands();
+        fetchCategories();
         fetchWishlist();
     }, []);
+
+    useEffect(() => {
+        const categoryParam = searchParams.get('category');
+        if (!categoryParam) return;
+        if (categories.length === 0) return;
+        if (categories.some((c) => c._id === categoryParam)) {
+            setSelectedCategoryId(categoryParam);
+        }
+    }, [categories, searchParams]);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
+    const handleSelectAllCategories = () => {
+        setSelectedCategoryId('all');
+        const next = new URLSearchParams(searchParams);
+        next.delete('category');
+        setSearchParams(next, { replace: true });
+    };
+
+    const handleSelectCategory = (categoryId) => {
+        setSelectedCategoryId(categoryId);
+        const next = new URLSearchParams(searchParams);
+        next.set('category', categoryId);
+        setSearchParams(next, { replace: true });
+    };
+
+    const handleToggleBrand = (brandId) => {
+        setSelectedBrandIds((prev) => {
+            if (prev.includes(brandId)) {
+                return prev.filter((id) => id !== brandId);
+            }
+            return [...prev, brandId];
+        });
+    };
 
     const handleToggleWishlist = async (e, productId) => {
         e.preventDefault();
@@ -42,8 +108,7 @@ const ProductList = () => {
         
         const token = localStorage.getItem('token');
         if (!token || token === 'null' || token === 'undefined') {
-            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
-            navigate('/login');
+            navigate('/login', { state: { notice: { type: 'info', text: 'Vui lòng đăng nhập để sử dụng tính năng yêu thích!' } } });
             return;
         }
 
@@ -59,63 +124,88 @@ const ProductList = () => {
         }
     };
 
+    const filteredProducts = products.filter((p) => {
+        const brandId = typeof p.brand_id === 'string' ? p.brand_id : p.brand_id?._id;
+        const isBrandMatch = selectedBrandIds.length === 0 || (brandId && selectedBrandIds.includes(brandId));
+
+        if (selectedCategoryId === 'all') return isBrandMatch;
+        const categoryId = typeof p.category_id === 'string' ? p.category_id : p.category_id?._id;
+        return isBrandMatch && categoryId === selectedCategoryId;
+    });
+
+    const getObjectIdTime = (id) => {
+        if (typeof id !== 'string' || id.length < 8) return 0;
+        const seconds = Number.parseInt(id.slice(0, 8), 16);
+        return Number.isFinite(seconds) ? seconds * 1000 : 0;
+    };
+
+    const displayedProducts = [...filteredProducts].sort((a, b) => {
+        if (sortOption === 'price_asc') return (a.price ?? 0) - (b.price ?? 0);
+        if (sortOption === 'price_desc') return (b.price ?? 0) - (a.price ?? 0);
+        if (sortOption === 'newest') return getObjectIdTime(b._id) - getObjectIdTime(a._id);
+        return 0;
+    });
+
     return (
         <main className="pt-28 pb-20 max-w-7xl mx-auto px-6 min-h-screen">
+            {notice && (
+                <div className={`fixed top-24 right-6 z-50 max-w-sm w-[min(380px,calc(100vw-48px))] rounded-2xl px-4 py-3 shadow-xl border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-lg">
+                            {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                        </span>
+                        <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                        <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col md:flex-row gap-12">
                 {/* Sidebar Filters */}
                 <aside className="w-full md:w-64 flex-shrink-0">
                     <div className="sticky top-28 space-y-10">
                         <div>
-                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Brand</h3>
+                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Thương hiệu</h3>
+                            <div className="space-y-3">
+                                {brands.map((brand) => (
+                                    <label key={brand._id} className="flex items-center group cursor-pointer">
+                                        <input
+                                            className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all"
+                                            type="checkbox"
+                                            checked={selectedBrandIds.includes(brand._id)}
+                                            onChange={() => handleToggleBrand(brand._id)}
+                                        />
+                                        <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">{brand.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Danh mục</h3>
                             <div className="space-y-3">
                                 <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox" defaultChecked />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">Apple</span>
+                                    <input
+                                        className="w-5 h-5 border-outline-variant text-primary focus:ring-primary/20 transition-all"
+                                        name="category"
+                                        type="radio"
+                                        checked={selectedCategoryId === 'all'}
+                                        onChange={handleSelectAllCategories}
+                                    />
+                                    <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">Tất cả</span>
                                 </label>
-                                <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox" defaultChecked />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">Samsung</span>
-                                </label>
-                                <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox" />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">Sony</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Price Range</h3>
-                            <div className="px-2">
-                                <input className="w-full h-1.5 bg-surface-container-high rounded-full appearance-none cursor-pointer accent-primary" max="200000000" min="0" type="range" />
-                                <div className="flex justify-between mt-4">
-                                    <span className="text-sm font-semibold text-on-surface-variant">0đ</span>
-                                    <span className="text-sm font-semibold text-on-surface-variant">200tr</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Storage</h3>
-                            <div className="flex flex-wrap gap-2">
-                                <button className="px-4 py-2 text-xs font-bold rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all">128GB</button>
-                                <button className="px-4 py-2 text-xs font-bold rounded-full bg-primary text-white transition-all">256GB</button>
-                                <button className="px-4 py-2 text-xs font-bold rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all">512GB</button>
-                                <button className="px-4 py-2 text-xs font-bold rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all">1TB</button>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">RAM</h3>
-                            <div className="space-y-3">
-                                <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 border-outline-variant text-primary focus:ring-primary/20 transition-all" name="ram" type="radio" />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant">8GB</span>
-                                </label>
-                                <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 border-outline-variant text-primary focus:ring-primary/20 transition-all" name="ram" type="radio" defaultChecked />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant">12GB</span>
-                                </label>
-                                <label className="flex items-center group cursor-pointer">
-                                    <input className="w-5 h-5 border-outline-variant text-primary focus:ring-primary/20 transition-all" name="ram" type="radio" />
-                                    <span className="ml-3 text-sm font-medium text-on-surface-variant">16GB+</span>
-                                </label>
+                                {categories.map((category) => (
+                                    <label key={category._id} className="flex items-center group cursor-pointer">
+                                        <input
+                                            className="w-5 h-5 border-outline-variant text-primary focus:ring-primary/20 transition-all"
+                                            name="category"
+                                            type="radio"
+                                            checked={selectedCategoryId === category._id}
+                                            onChange={() => handleSelectCategory(category._id)}
+                                        />
+                                        <span className="ml-3 text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">{category.name}</span>
+                                    </label>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -127,15 +217,18 @@ const ProductList = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
                         <div>
                             <h1 className="text-3xl font-black tracking-tight text-on-surface">Danh Sách Sản Phẩm</h1>
-                            <p className="text-on-surface-variant text-sm mt-1">Showing {products.length} products</p>
                         </div>
                         <div className="flex items-center gap-3 bg-surface-container-low p-1.5 rounded-full">
-                            <span className="text-xs font-bold text-outline uppercase ml-4 mr-2">Sort by:</span>
-                            <select className="bg-surface-container-lowest border-none text-sm font-semibold rounded-full focus:ring-0 cursor-pointer pr-10 hover:bg-surface-container-high transition-colors">
-                                <option>Most Popular</option>
-                                <option>Newest</option>
-                                <option>Price: Low to High</option>
-                                <option>Price: High to Low</option>
+                            <span className="text-xs font-bold text-outline uppercase ml-4 mr-2">Sắp xếp:</span>
+                            <select
+                                value={sortOption}
+                                onChange={(e) => setSortOption(e.target.value)}
+                                className="bg-surface-container-lowest border-none text-sm font-semibold rounded-full focus:ring-0 cursor-pointer pr-10 hover:bg-surface-container-high transition-colors"
+                            >
+                                <option value="popular">Phổ biến nhất</option>
+                                <option value="newest">Mới nhất</option>
+                                <option value="price_asc">Giá: Thấp đến cao</option>
+                                <option value="price_desc">Giá: Cao đến thấp</option>
                             </select>
                         </div>
                     </div>
@@ -143,15 +236,24 @@ const ProductList = () => {
                     {error && <div className="mb-6 p-4 bg-error-container text-on-error-container rounded-xl text-sm font-medium">{error}</div>}
 
                     {/* Product Grid */}
-                    {products.length > 0 ? (
+                    {displayedProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
-                            {products.map((product) => (
+                            {displayedProducts.map((product) => (
                                 <div className="group" key={product._id}>
                                     <div className="relative aspect-[3/4] bg-surface-container-lowest rounded-xl overflow-hidden mb-5 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 ring-1 ring-outline/10">
                                         {product.images && product.images.length > 0 ? (
                                             <img alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src={product.images[0]} />
                                         ) : (
-                                            <div className="w-full h-full bg-surface flex items-center justify-center text-outline">No Image</div>
+                                            <div className="w-full h-full bg-surface flex items-center justify-center text-outline">Chưa có ảnh</div>
+                                        )}
+
+                                        {product.is_visible === false && (
+                                            <>
+                                                <div className="absolute inset-0 bg-black/55 z-[5]" />
+                                                <div className="absolute top-4 left-4 z-[6] bg-slate-900/90 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase">
+                                                    Đã ẩn
+                                                </div>
+                                            </>
                                         )}
                                         
                                         {/* Wishlist Button */}
@@ -176,7 +278,7 @@ const ProductList = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest">{product.brand_id?.name || 'Brand'}</p>
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest">{product.brand_id?.name || 'Thương hiệu'}</p>
                                         <h3 className="font-bold text-lg text-on-surface line-clamp-1" title={product.name}>{product.name}</h3>
                                         <div className="flex items-center justify-between mt-2">
                                             <p className="text-xl font-black text-on-surface">{product.price.toLocaleString()} VNĐ</p>
@@ -198,7 +300,7 @@ const ProductList = () => {
                     )}
 
                     {/* Pagination */}
-                    {products.length > 0 && (
+                    {displayedProducts.length > 0 && (
                         <div className="mt-20 flex justify-center items-center gap-2">
                             <button className="w-10 h-10 rounded-full flex items-center justify-center text-outline-variant border border-outline-variant hover:border-primary hover:text-primary transition-all">
                                 <span className="material-symbols-outlined">chevron_left</span>

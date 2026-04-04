@@ -11,6 +11,7 @@ const ProductDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
     const [isInWishlist, setIsInWishlist] = useState(false);
+    const [notice, setNotice] = useState(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -38,6 +39,12 @@ const ProductDetail = () => {
         fetchWishlistStatus();
     }, [id]);
 
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
     const handleAddToCart = async () => {
         setAdding(true);
         try {
@@ -45,13 +52,13 @@ const ProductDetail = () => {
                 product_id: id,
                 quantity: quantity
             });
-            alert('Đã thêm sản phẩm vào giỏ hàng!');
-            navigate('/cart');
+            navigate('/cart', { state: { notice: { type: 'success', text: 'Đã thêm sản phẩm vào giỏ hàng!' } } });
         } catch (err) {
-            alert(err.response?.data?.message || 'Vui lòng đăng nhập để thêm vào giỏ hàng');
             if (err.response?.status === 401) {
-                navigate('/login');
+                navigate('/login', { state: { notice: { type: 'info', text: 'Vui lòng đăng nhập để thêm vào giỏ hàng' } } });
+                return;
             }
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Thêm vào giỏ hàng thất bại' });
         } finally {
             setAdding(false);
         }
@@ -60,8 +67,7 @@ const ProductDetail = () => {
     const handleToggleWishlist = async () => {
         const token = localStorage.getItem('token');
         if (!token || token === 'null' || token === 'undefined') {
-            alert('Vui lòng đăng nhập để sử dụng tính năng yêu thích!');
-            navigate('/login');
+            navigate('/login', { state: { notice: { type: 'info', text: 'Vui lòng đăng nhập để sử dụng tính năng yêu thích!' } } });
             return;
         }
 
@@ -89,13 +95,46 @@ const ProductDetail = () => {
         );
     }
 
+    const categoryId = typeof product.category_id === 'string' ? product.category_id : product.category_id?._id;
+    const currentUser = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user'));
+        } catch (_err) {
+            return null;
+        }
+    })();
+    const isAdminViewer = currentUser?.role === 'ADMIN';
+
     return (
         <main className="pt-24 max-w-7xl mx-auto px-6 min-h-screen">
+            {notice && (
+                <div className={`fixed top-24 right-6 z-50 max-w-sm w-[min(380px,calc(100vw-48px))] rounded-2xl px-4 py-3 shadow-xl border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-lg">
+                            {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                        </span>
+                        <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                        <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+            {product.is_visible === false && isAdminViewer && (
+                <div className="mb-6 rounded-xl px-4 py-3 border bg-slate-100 text-slate-800 border-slate-200">
+                    <p className="text-sm font-bold">Sản phẩm này đang ở trạng thái ẩn tạm.</p>
+                </div>
+            )}
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 mb-8 text-sm font-medium text-outline">
-                <Link to="/products" className="hover:text-primary transition-colors">Shop</Link>
+                <Link to="/products" className="hover:text-primary transition-colors">Cửa hàng</Link>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
-                <span>{product.category_id?.name || 'Danh mục'}</span>
+                <Link
+                    to={categoryId ? `/products?category=${categoryId}` : '/products'}
+                    className="hover:text-primary transition-colors"
+                >
+                    {product.category_id?.name || 'Danh mục'}
+                </Link>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
                 <span className="text-on-surface">{product.name}</span>
             </nav>
@@ -107,14 +146,14 @@ const ProductDetail = () => {
                         {product.images && product.images.length > 0 ? (
                             <img alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" src={product.images[0]} />
                         ) : (
-                            <div className="text-outline">No Image</div>
+                            <div className="text-outline">Chưa có ảnh</div>
                         )}
-                        <div className="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">New Arrival</div>
+                        <div className="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Hàng mới về</div>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                         {product.images && product.images.slice(0, 3).map((img, idx) => (
                             <button key={idx} className={`aspect-square bg-surface-container-low rounded-xl p-2 overflow-hidden ${idx === 0 ? 'border-2 border-primary' : 'hover:bg-surface-container transition-colors'}`}>
-                                <img className="w-full h-full object-contain" src={img} alt={`Thumbnail ${idx + 1}`} />
+                                <img className="w-full h-full object-contain" src={img} alt={`Ảnh nhỏ ${idx + 1}`} />
                             </button>
                         ))}
                     </div>
@@ -134,9 +173,9 @@ const ProductDetail = () => {
                             <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
                             <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 0.5"}}>star_half</span>
                         </div>
-                        <span className="text-sm font-medium text-outline">1,240 Reviews</span>
+                        <span className="text-sm font-medium text-outline">1.240 đánh giá</span>
                         <span className="text-outline">|</span>
-                        <span className="text-sm font-medium text-primary">In Stock ({product.stock})</span>
+                        <span className="text-sm font-medium text-primary">Còn hàng ({product.stock})</span>
                     </div>
                     <div className="text-3xl font-bold text-on-surface mb-6">
                         {product.price.toLocaleString()} VNĐ

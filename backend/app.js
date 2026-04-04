@@ -5,7 +5,7 @@ const cors = require('cors');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
 // Load env vars
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Route files
 const auth = require('./src/routes/auth.route');

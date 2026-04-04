@@ -3,6 +3,9 @@ const OrderItem = require('../models/orderItem.model');
 const Cart = require('../models/cart.model');
 const CartItem = require('../models/cartItem.model');
 const Product = require('../models/product.model');
+const User = require('../models/user.model');
+const Role = require('../models/role.model');
+const Brand = require('../models/brand.model');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -12,13 +15,13 @@ const createOrder = async (req, res) => {
         const cart = await Cart.findOne({ user_id: req.user.id });
 
         if (!cart) {
-            return res.status(400).json({ message: 'No cart found for this user' });
+            return res.status(400).json({ message: 'Không tìm thấy giỏ hàng của người dùng' });
         }
 
         const cartItems = await CartItem.find({ cart_id: cart._id }).populate('product_id');
 
         if (cartItems.length === 0) {
-            return res.status(400).json({ message: 'Cart is empty' });
+            return res.status(400).json({ message: 'Giỏ hàng đang trống' });
         }
 
         // Calculate total price
@@ -53,7 +56,7 @@ const createOrder = async (req, res) => {
         res.status(201).json(createdOrder);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -66,7 +69,7 @@ const getOrders = async (req, res) => {
         res.json(orders);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -79,7 +82,7 @@ const getAllOrders = async (req, res) => {
         res.json(orders);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -91,12 +94,12 @@ const getOrderById = async (req, res) => {
         const order = await Order.findById(req.params.id);
 
         if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
         }
 
         // Ensure user owns this order OR is admin
         if (order.user_id.toString() !== req.user.id && req.user.role !== 'ADMIN') {
-            return res.status(401).json({ message: 'Not authorized' });
+            return res.status(401).json({ message: 'Không có quyền truy cập' });
         }
 
         const items = await OrderItem.find({ order_id: order._id }).populate('product_id', 'name price images');
@@ -107,7 +110,7 @@ const getOrderById = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -121,7 +124,7 @@ const updateOrderStatus = async (req, res) => {
         const order = await Order.findById(req.params.id);
 
         if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
         }
 
         order.status = status;
@@ -130,7 +133,95 @@ const updateOrderStatus = async (req, res) => {
         res.json(updatedOrder);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
+    }
+};
+
+// @desc    Admin dashboard stats
+// @route   GET /api/orders/dashboard
+// @access  Private/Admin
+const getDashboardStats = async (req, res) => {
+    try {
+        const now = new Date();
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date(now);
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const revenueTodayAgg = await Order.aggregate([
+            { $match: { created_at: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: 'cancelled' } } },
+            { $group: { _id: null, total: { $sum: '$total_price' }, count: { $sum: 1 } } }
+        ]);
+
+        const revenueToday = revenueTodayAgg[0]?.total || 0;
+        const ordersToday = revenueTodayAgg[0]?.count || 0;
+
+        const totalOrders = await Order.countDocuments({});
+
+        const lowStockThreshold = 5;
+        const lowStockCount = await Product.countDocuments({ stock: { $lte: lowStockThreshold } });
+
+        const userRole = await Role.findOne({ name: 'USER' }).select('_id');
+        const activeCustomers = userRole
+            ? await User.countDocuments({ status: 'active', role_id: userRole._id })
+            : await User.countDocuments({ status: 'active' });
+
+        const startMonth = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const monthlyRevenueAgg = await Order.aggregate([
+            { $match: { created_at: { $gte: startMonth }, status: { $ne: 'cancelled' } } },
+            {
+                $group: {
+                    _id: { y: { $year: '$created_at' }, m: { $month: '$created_at' } },
+                    total: { $sum: '$total_price' }
+                }
+            },
+            { $sort: { '_id.y': 1, '_id.m': 1 } }
+        ]);
+
+        const monthlyRevenueMap = new Map(
+            monthlyRevenueAgg.map((r) => [`${r._id.y}-${String(r._id.m).padStart(2, '0')}`, r.total])
+        );
+
+        const monthlyRevenue = Array.from({ length: 6 }, (_, idx) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - 5 + idx, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            return {
+                year: d.getFullYear(),
+                month: d.getMonth() + 1,
+                total: monthlyRevenueMap.get(key) || 0
+            };
+        });
+
+        const totalProducts = await Product.countDocuments({});
+        const distributionAgg = await Product.aggregate([
+            { $group: { _id: '$brand_id', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 3 }
+        ]);
+
+        const brandIds = distributionAgg.map((d) => d._id).filter(Boolean);
+        const brands = await Brand.find({ _id: { $in: brandIds } }).select('name');
+        const brandNameById = new Map(brands.map((b) => [String(b._id), b.name]));
+
+        const productDistribution = distributionAgg.map((d) => {
+            const name = brandNameById.get(String(d._id)) || 'Khác';
+            const percent = totalProducts > 0 ? Math.round((d.count / totalProducts) * 100) : 0;
+            return { name, count: d.count, percent };
+        });
+
+        res.json({
+            revenueToday,
+            ordersToday,
+            totalOrders,
+            lowStockCount,
+            lowStockThreshold,
+            activeCustomers,
+            monthlyRevenue,
+            productDistribution
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -139,5 +230,6 @@ module.exports = {
     getOrders,
     getOrderById,
     updateOrderStatus,
-    getAllOrders
+    getAllOrders,
+    getDashboardStats
 };

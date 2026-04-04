@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { getAuthUser } from '../utils/auth';
 import { GoogleLogin } from '@react-oauth/google';
@@ -8,8 +8,23 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const incoming = location.state?.notice;
+        if (!incoming) return;
+        setNotice(incoming);
+        navigate(location.pathname, { replace: true, state: {} });
+    }, [location.pathname, location.state, navigate]);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -39,16 +54,16 @@ const Login = () => {
             localStorage.setItem('user', JSON.stringify(res.data.user));
             // Notify Header to update
             window.dispatchEvent(new Event('authChange'));
-            alert('Đăng nhập thành công! Chào mừng ' + (res.data.user?.name || 'bạn'));
+            setNotice({ type: 'success', text: 'Đăng nhập thành công! Chào mừng ' + (res.data.user?.name || 'bạn') });
             
             // Re-fetch user or check role
             const user = getAuthUser();
             if (user?.role === 'ADMIN') {
-                navigate('/admin');
+                window.setTimeout(() => navigate('/admin'), 600);
             } else {
-                navigate('/products');
+                window.setTimeout(() => navigate('/products'), 600);
             }
-        } catch (err) {
+        } catch (_err) {
             setError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
         }
     };
@@ -59,6 +74,19 @@ const Login = () => {
 
     return (
         <div className="flex items-center justify-center p-4 min-h-[calc(100vh-200px)] py-20 text-left">
+            {notice && (
+                <div className={`fixed top-24 right-6 z-50 max-w-sm w-[min(380px,calc(100vw-48px))] rounded-2xl px-4 py-3 shadow-xl border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-lg">
+                            {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                        </span>
+                        <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                        <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
             <main className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm border border-outline-variant/10 min-h-[700px]">
                 <section className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-primary to-primary-container text-white relative overflow-hidden">
                     <div className="absolute top-[10%] right-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>

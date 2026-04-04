@@ -17,7 +17,7 @@ exports.getWishlist = async (req, res) => {
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: 'Server Error'
+            message: 'Lỗi máy chủ'
         });
     }
 };
@@ -32,7 +32,7 @@ exports.toggleWishlist = async (req, res) => {
         if (!product_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide a product ID'
+                message: 'Vui lòng cung cấp mã sản phẩm'
             });
         }
 
@@ -40,7 +40,7 @@ exports.toggleWishlist = async (req, res) => {
         if (!product) {
             return res.status(404).json({
                 success: false,
-                message: 'Product not found'
+                message: 'Không tìm thấy sản phẩm'
             });
         }
 
@@ -53,7 +53,7 @@ exports.toggleWishlist = async (req, res) => {
             await Wishlist.findByIdAndDelete(existingItem._id);
             return res.status(200).json({
                 success: true,
-                message: 'Removed from wishlist',
+                message: 'Đã xoá khỏi danh sách yêu thích',
                 isWishlisted: false
             });
         } else {
@@ -63,14 +63,14 @@ exports.toggleWishlist = async (req, res) => {
             });
             return res.status(201).json({
                 success: true,
-                message: 'Added to wishlist',
+                message: 'Đã thêm vào danh sách yêu thích',
                 isWishlisted: true
             });
         }
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: 'Server Error'
+            message: 'Lỗi máy chủ'
         });
     }
 };
@@ -92,7 +92,7 @@ exports.checkInWishlist = async (req, res) => {
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: 'Server Error'
+            message: 'Lỗi máy chủ'
         });
     }
 };

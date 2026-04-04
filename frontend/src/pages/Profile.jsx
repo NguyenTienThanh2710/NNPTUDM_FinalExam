@@ -53,7 +53,7 @@ const Profile = () => {
                 setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
                 setIsEditing(false);
             }
-        } catch (err) {
+        } catch (_err) {
             setMessage({ type: 'error', text: 'Cập nhật thất bại. Vui lòng thử lại.' });
         }
     };

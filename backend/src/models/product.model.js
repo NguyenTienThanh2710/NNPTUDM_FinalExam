@@ -32,6 +32,10 @@ const ProductSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Brand',
         required: true
+    },
+    is_visible: {
+        type: Boolean,
+        default: true
     }
 });
 
