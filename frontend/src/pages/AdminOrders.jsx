@@ -54,15 +54,74 @@ const AdminOrders = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('all');
     const [sortOption, setSortOption] = useState('newest');
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailData, setDetailData] = useState(null);
+    const [detailOrderId, setDetailOrderId] = useState(null);
+    const [statusDraft, setStatusDraft] = useState('pending');
+    const [statusSaving, setStatusSaving] = useState(false);
+    const [notice, setNotice] = useState(null);
     const pageSize = 10;
 
     useEffect(() => {
         api.get('/orders/all').then(res => setOrders(res.data)).catch(console.error);
     }, []);
 
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
     const getStatusText = (status) => {
         const map = { pending: 'Chờ xử lý', processing: 'Đang xử lý', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
         return map[status] || status;
+    };
+
+    const openDetail = async (orderId) => {
+        setDetailOpen(true);
+        setDetailOrderId(orderId);
+        setDetailLoading(true);
+        setDetailData(null);
+        try {
+            const res = await api.get(`/orders/${orderId}`);
+            setDetailData(res.data);
+            setStatusDraft(res.data?.order?.status || 'pending');
+        } catch (_err) {
+            const msg = _err?.response?.data?.message || _err?.response?.data?.msg || 'Không thể lấy chi tiết đơn hàng';
+            setNotice({ type: 'error', text: msg });
+            setDetailOpen(false);
+            setDetailOrderId(null);
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const closeDetail = () => {
+        setDetailOpen(false);
+        setDetailOrderId(null);
+        setDetailData(null);
+        setDetailLoading(false);
+        setStatusSaving(false);
+    };
+
+    const saveStatus = async () => {
+        if (!detailOrderId) return;
+        if (!detailData?.order) return;
+        if (statusDraft === detailData.order.status) return;
+        setStatusSaving(true);
+        try {
+            const res = await api.put(`/orders/${detailOrderId}/status`, { status: statusDraft });
+            const nextStatus = res.data?.status;
+            setOrders((prev) => prev.map((o) => (o._id === detailOrderId ? { ...o, status: nextStatus } : o)));
+            setDetailData((prev) => (prev ? { ...prev, order: { ...prev.order, status: nextStatus } } : prev));
+            setNotice({ type: 'success', text: 'Cập nhật trạng thái đơn hàng thành công' });
+        } catch (_err) {
+            const msg = _err?.response?.data?.message || _err?.response?.data?.msg || 'Không thể cập nhật trạng thái đơn hàng';
+            setNotice({ type: 'error', text: msg });
+        } finally {
+            setStatusSaving(false);
+        }
     };
 
     const filteredOrders = useMemo(() => {
@@ -122,6 +181,20 @@ const AdminOrders = () => {
                 </button>
             }
         >
+            {notice && (
+                <div className={`mb-6 rounded-xl px-4 py-3 border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-lg">
+                            {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                        </span>
+                        <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                        <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Dashboard Stats (Bento Style) */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 text-left">
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-1">
@@ -261,7 +334,11 @@ const AdminOrders = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-right">
-                                            <button className={`${isCancelled ? 'text-slate-400 hover:text-primary' : 'text-primary hover:underline'} text-sm font-semibold transition-colors`}>
+                                            <button
+                                                type="button"
+                                                onClick={() => openDetail(row._id)}
+                                                className={`${isCancelled ? 'text-slate-400 hover:text-primary' : 'text-primary hover:underline'} text-sm font-semibold transition-colors`}
+                                            >
                                                 Xem chi tiết
                                             </button>
                                         </td>
@@ -314,6 +391,136 @@ const AdminOrders = () => {
                 <span className="material-symbols-outlined text-3xl">add</span>
                 <span className="absolute right-16 bg-on-surface text-surface text-xs py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Tạo đơn mới</span>
             </button>
+
+            {detailOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6">
+                    <button type="button" className="absolute inset-0 bg-black/50" onClick={closeDetail} />
+                    <div className="relative w-full max-w-3xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <div className="text-sm font-bold text-on-surface">Chi tiết đơn hàng</div>
+                                <div className="text-xs text-secondary">{detailOrderId ? `Mã đơn: ${detailOrderId.slice(-6).toUpperCase()}` : ''}</div>
+                            </div>
+                            <button type="button" onClick={closeDetail} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="px-6 py-5">
+                            {detailLoading && (
+                                <div className="text-sm text-secondary">Đang tải chi tiết đơn hàng...</div>
+                            )}
+
+                            {!detailLoading && detailData?.order && (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    <div className="lg:col-span-2">
+                                        <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Khách hàng</div>
+                                                    <div className="font-semibold text-on-surface">{detailData.order.user_id?.name || 'N/A'}</div>
+                                                    <div className="text-xs text-secondary">{detailData.order.user_id?.email || 'N/A'}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Ngày đặt</div>
+                                                    <div className="font-semibold text-on-surface">
+                                                        {new Date(detailData.order.created_at).toLocaleString('vi-VN')}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Tổng tiền</div>
+                                                    <div className="font-extrabold text-on-surface">{(detailData.order.total_price || 0).toLocaleString()} ₫</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Trạng thái hiện tại</div>
+                                                    <div className="font-semibold text-on-surface">{getStatusText(detailData.order.status)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+                                            <div className="px-4 py-3 border-b border-slate-100 text-xs font-bold text-secondary uppercase tracking-widest">
+                                                Sản phẩm trong đơn
+                                            </div>
+                                            <div className="max-h-[320px] overflow-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead className="bg-slate-50/50 sticky top-0">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-[11px] font-bold text-secondary uppercase tracking-[0.1em]">Sản phẩm</th>
+                                                            <th className="px-4 py-3 text-[11px] font-bold text-secondary uppercase tracking-[0.1em]">Giá</th>
+                                                            <th className="px-4 py-3 text-[11px] font-bold text-secondary uppercase tracking-[0.1em]">SL</th>
+                                                            <th className="px-4 py-3 text-[11px] font-bold text-secondary uppercase tracking-[0.1em] text-right">Thành tiền</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {(detailData.items || []).map((item) => (
+                                                            <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+                                                                <td className="px-4 py-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        {item.product_id?.images?.[0] && (
+                                                                            <img
+                                                                                src={item.product_id.images[0]}
+                                                                                alt={item.product_id?.name || 'Sản phẩm'}
+                                                                                className="w-10 h-10 rounded-lg object-cover border border-outline-variant/20"
+                                                                            />
+                                                                        )}
+                                                                        <div className="text-sm font-semibold text-on-surface">
+                                                                            {item.product_id?.name || 'N/A'}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-sm font-semibold text-on-surface">{(item.price || 0).toLocaleString()} ₫</td>
+                                                                <td className="px-4 py-4 text-sm text-on-surface">{item.quantity || 0}</td>
+                                                                <td className="px-4 py-4 text-sm font-extrabold text-on-surface text-right">{((item.price || 0) * (item.quantity || 0)).toLocaleString()} ₫</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="lg:col-span-1">
+                                        <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+                                            <div className="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Cập nhật trạng thái</div>
+                                            <div className="space-y-3">
+                                                <div className="relative">
+                                                    <select
+                                                        value={statusDraft}
+                                                        onChange={(e) => setStatusDraft(e.target.value)}
+                                                        className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 pr-10 text-sm font-semibold text-on-surface focus:ring-2 focus:ring-primary/20 shadow-sm cursor-pointer"
+                                                        disabled={statusSaving}
+                                                    >
+                                                        <option value="pending">Chờ xử lý</option>
+                                                        <option value="processing">Đang xử lý</option>
+                                                        <option value="shipped">Đang giao</option>
+                                                        <option value="delivered">Đã giao</option>
+                                                        <option value="cancelled">Đã hủy</option>
+                                                    </select>
+                                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-sm">expand_more</span>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={saveStatus}
+                                                    disabled={statusSaving || !detailData?.order || statusDraft === detailData.order.status}
+                                                    className="w-full bg-primary text-on-primary px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {statusSaving ? 'Đang cập nhật...' : 'Cập nhật'}
+                                                </button>
+
+                                                <div className="text-xs text-secondary">
+                                                    Khi admin cập nhật trạng thái, user sẽ thấy trạng thái mới khi xem lịch sử/chi tiết đơn hàng.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 };

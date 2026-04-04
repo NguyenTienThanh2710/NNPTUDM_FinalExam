@@ -91,14 +91,16 @@ const getAllOrders = async (req, res) => {
 // @access  Private
 const getOrderById = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.id);
+        const order = await Order.findById(req.params.id).populate('user_id', 'name email');
 
         if (!order) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
         }
 
         // Ensure user owns this order OR is admin
-        if (order.user_id.toString() !== req.user.id && req.user.role !== 'ADMIN') {
+        const isAdmin = req.userRole === 'ADMIN' || req.user?.role_id?.name === 'ADMIN';
+        const orderUserId = typeof order.user_id === 'string' ? order.user_id : order.user_id?._id;
+        if (String(orderUserId) !== req.user.id && !isAdmin) {
             return res.status(401).json({ message: 'Không có quyền truy cập' });
         }
 
@@ -121,6 +123,11 @@ const updateOrderStatus = async (req, res) => {
     const { status } = req.body;
 
     try {
+        const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ' });
+        }
+
         const order = await Order.findById(req.params.id);
 
         if (!order) {

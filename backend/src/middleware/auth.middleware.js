@@ -13,9 +13,11 @@ const optionalProtect = async (req, _res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userRole = decoded?.user?.role;
         req.user = await User.findById(decoded.user.id).select('-password').populate('role_id');
     } catch (_error) {
         req.user = undefined;
+        req.userRole = undefined;
     }
 
     next();
@@ -31,6 +33,7 @@ const protect = async (req, res, next) => {
 
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.userRole = decoded?.user?.role;
 
             // Get user from the token and populate role
             req.user = await User.findById(decoded.user.id).select('-password').populate('role_id');
@@ -48,7 +51,7 @@ const protect = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-    if (req.user && req.user.role_id && req.user.role_id.name === 'ADMIN') {
+    if (req.userRole === 'ADMIN' || (req.user && req.user.role_id && req.user.role_id.name === 'ADMIN')) {
         next();
     } else {
         res.status(403).json({ success: false, message: 'Bạn không có quyền quản trị để truy cập' });
