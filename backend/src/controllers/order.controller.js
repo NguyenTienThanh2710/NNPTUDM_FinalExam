@@ -6,6 +6,7 @@ const Product = require('../models/product.model');
 const User = require('../models/user.model');
 const Role = require('../models/role.model');
 const Brand = require('../models/brand.model');
+const OrderStatusHistory = require('../models/orderStatusHistory.model');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -29,10 +30,23 @@ const createOrder = async (req, res) => {
             return total + (item.product_id.price * item.quantity);
         }, 0);
 
+        const { shipping_address, payment_method } = req.body;
+        if (!shipping_address) {
+            return res.status(400).json({ message: 'Vui lòng cung cấp địa chỉ giao hàng' });
+        }
+
+        const allowedPaymentMethods = ['COD', 'BANK_TRANSFER'];
+        if (payment_method && !allowedPaymentMethods.includes(payment_method)) {
+            return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ' });
+        }
+
         // Create the order
         const order = new Order({
             user_id: req.user.id,
             total_price: totalPrice,
+            shipping_address,
+            payment_method: payment_method || 'COD',
+            payment_status: 'pending',
             status: 'pending'
         });
 
@@ -53,6 +67,16 @@ const createOrder = async (req, res) => {
         // Clear cart after order creation
         await CartItem.deleteMany({ cart_id: cart._id });
 
+        // Log initial order status
+        await OrderStatusHistory.create({
+            order_id: createdOrder._id,
+            changed_by: req.user.id,
+            status_type: 'order',
+            old_value: 'none',
+            new_value: 'pending',
+            note: 'Đơn hàng được khởi tạo'
+        });
+
         res.status(201).json(createdOrder);
     } catch (error) {
         console.error(error);
@@ -65,8 +89,19 @@ const createOrder = async (req, res) => {
 // @access  Private
 const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ user_id: req.user.id }).sort({ created_at: -1 });
-        res.json(orders);
+        const orders = await Order.find({ user_id: req.user.id }).sort({ created_at: -1 }).lean();
+        
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const firstItem = await OrderItem.findOne({ order_id: order._id })
+                .populate('product_id', 'name images')
+                .lean();
+            return {
+                ...order,
+                main_item: firstItem
+            };
+        }));
+
+        res.json(ordersWithItems);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi máy chủ' });
@@ -78,8 +113,22 @@ const getOrders = async (req, res) => {
 // @access  Private/Admin
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({}).populate('user_id', 'name email').sort({ created_at: -1 });
-        res.json(orders);
+        const orders = await Order.find({})
+            .populate('user_id', 'name email')
+            .sort({ created_at: -1 })
+            .lean();
+        
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const firstItem = await OrderItem.findOne({ order_id: order._id })
+                .populate('product_id', 'name images')
+                .lean();
+            return {
+                ...order,
+                main_item: firstItem
+            };
+        }));
+
+        res.json(ordersWithItems);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi máy chủ' });
@@ -105,10 +154,12 @@ const getOrderById = async (req, res) => {
         }
 
         const items = await OrderItem.find({ order_id: order._id }).populate('product_id', 'name price images');
+        const history = await OrderStatusHistory.find({ order_id: order._id }).populate('changed_by', 'name').sort({ created_at: -1 });
 
         res.json({
             order: order,
-            items: items
+            items: items,
+            history: history
         });
     } catch (error) {
         console.error(error);
@@ -120,22 +171,45 @@ const getOrderById = async (req, res) => {
 // @route   PUT /api/orders/:id/status
 // @access  Private/Admin
 const updateOrderStatus = async (req, res) => {
-    const { status } = req.body;
+    const { status, note } = req.body;
 
     try {
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+
         const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ' });
         }
 
-        const order = await Order.findById(req.params.id);
+        // Professional Constraint: Define valid transitions
+        const transitions = {
+            'pending': ['processing', 'cancelled'],
+            'processing': ['shipped', 'cancelled'],
+            'shipped': ['delivered', 'cancelled'],
+            'delivered': [],
+            'cancelled': []
+        };
 
-        if (!order) {
-            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+        if (!transitions[order.status].includes(status)) {
+            return res.status(400).json({ 
+                message: `Không thể chuyển trạng thái từ ${order.status} sang ${status}` 
+            });
         }
 
+        const oldStatus = order.status;
         order.status = status;
         const updatedOrder = await order.save();
+
+        // Log the change
+        await OrderStatusHistory.create({
+            order_id: order._id,
+            changed_by: req.user.id,
+            status_type: 'order',
+            old_value: oldStatus,
+            new_value: status,
+            note: note || `Cập nhật trạng thái đơn hàng sang ${status}`
+        });
 
         res.json(updatedOrder);
     } catch (error) {
@@ -232,11 +306,56 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// @desc    Update payment status
+// @route   PUT /api/orders/:id/payment
+// @access  Private/Admin
+const updatePaymentStatus = async (req, res) => {
+    const { payment_status, note } = req.body;
+
+    try {
+        const allowedStatuses = ['pending', 'paid', 'failed'];
+        if (!allowedStatuses.includes(payment_status)) {
+            return res.status(400).json({ message: 'Trạng thái thanh toán không hợp lệ' });
+        }
+
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+        }
+
+        const isAdmin = req.userRole === 'ADMIN' || req.user?.role_id?.name === 'ADMIN';
+        if (!isAdmin) {
+             return res.status(401).json({ message: 'Không có quyền cập nhật trạng thái thanh toán' });
+        }
+
+        const oldPaymentStatus = order.payment_status;
+        order.payment_status = payment_status;
+        const updatedOrder = await order.save();
+
+        // Log the change
+        await OrderStatusHistory.create({
+            order_id: order._id,
+            changed_by: req.user.id,
+            status_type: 'payment',
+            old_value: oldPaymentStatus,
+            new_value: payment_status,
+            note: note || `Cập nhật trạng thái thanh toán sang ${payment_status}`
+        });
+
+        res.json(updatedOrder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
     createOrder,
     getOrders,
     getOrderById,
     updateOrderStatus,
+    updatePaymentStatus,
     getAllOrders,
     getDashboardStats
 };
