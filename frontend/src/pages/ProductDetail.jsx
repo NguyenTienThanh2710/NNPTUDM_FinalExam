@@ -12,6 +12,10 @@ const ProductDetail = () => {
     const [adding, setAdding] = useState(false);
     const [isInWishlist, setIsInWishlist] = useState(false);
     const [notice, setNotice] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [newRating, setNewRating] = useState(5);
+    const [newComment, setNewComment] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -20,6 +24,15 @@ const ProductDetail = () => {
                 setProduct(res.data);
             } catch (_err) {
                 setError('Không thể lấy thông tin sản phẩm');
+            }
+        };
+
+        const fetchReviews = async () => {
+            try {
+                const res = await api.get(`/reviews/product/${id}`);
+                setReviews(res.data);
+            } catch (err) {
+                console.error('Error fetching reviews:', err);
             }
         };
 
@@ -36,6 +49,7 @@ const ProductDetail = () => {
         };
 
         fetchProduct();
+        fetchReviews();
         fetchWishlistStatus();
     }, [id]);
 
@@ -76,6 +90,59 @@ const ProductDetail = () => {
             setIsInWishlist(res.isWishlisted);
         } catch (err) {
             console.error('Error toggling wishlist:', err);
+        }
+    };
+
+    const handleSubmitReview = async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        if (!token || token === 'null' || token === 'undefined') {
+            navigate('/login', { state: { notice: { type: 'info', text: 'Vui lòng đăng nhập để đánh giá sản phẩm!' } } });
+            return;
+        }
+
+        setSubmittingReview(true);
+        try {
+            await api.post('/reviews', {
+                product_id: id,
+                rating: newRating,
+                comment: newComment
+            });
+            
+            setNotice({ type: 'success', text: 'Đã gửi đánh giá của bạn!' });
+            setNewRating(5);
+            setNewComment('');
+            
+            // Re-fetch product and reviews to update the average rating
+            const [prodRes, revRes] = await Promise.all([
+                api.get(`/products/${id}`),
+                api.get(`/reviews/product/${id}`)
+            ]);
+            setProduct(prodRes.data);
+            setReviews(revRes.data);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Gửi đánh giá thất bại' });
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
+
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xoá đánh giá này?')) return;
+
+        try {
+            await api.delete(`/reviews/${reviewId}`);
+            setNotice({ type: 'success', text: 'Đã xoá đánh giá!' });
+            
+            // Re-fetch product and reviews to update the average rating
+            const [prodRes, revRes] = await Promise.all([
+                api.get(`/products/${id}`),
+                api.get(`/reviews/product/${id}`)
+            ]);
+            setProduct(prodRes.data);
+            setReviews(revRes.data);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Xoá đánh giá thất bại' });
         }
     };
 
@@ -167,13 +234,19 @@ const ProductDetail = () => {
                     <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-on-surface mb-4 leading-tight">{product.name}</h1>
                     <div className="flex items-center gap-4 mb-8">
                         <div className="flex items-center text-amber-400">
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 0.5"}}>star_half</span>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <span 
+                                    key={star}
+                                    className="material-symbols-outlined text-sm" 
+                                    style={{
+                                        fontVariationSettings: `'FILL' ${product.avg_rating >= star ? 1 : (product.avg_rating >= star - 0.5 ? 0.5 : 0)}`
+                                    }}
+                                >
+                                    {product.avg_rating >= star ? 'star' : (product.avg_rating >= star - 0.5 ? 'star_half' : 'star')}
+                                </span>
+                            ))}
                         </div>
-                        <span className="text-sm font-medium text-outline">1.240 đánh giá</span>
+                        <span className="text-sm font-medium text-outline">{product.num_reviews || 0} đánh giá</span>
                         <span className="text-outline">|</span>
                         <span className="text-sm font-medium text-primary">Còn hàng ({product.stock})</span>
                     </div>
@@ -280,6 +353,119 @@ const ProductDetail = () => {
                         <span className="material-symbols-outlined text-primary text-3xl">battery_charging_full</span>
                         <h4 className="text-xl font-bold">Sạc Nhanh Siêu Tốc</h4>
                         <p className="text-outline text-sm leading-relaxed">Từ 0-100% trong thời gian ngắn ngủi, giúp thiết bị luôn sẵn sàng đồng hành cùng bạn.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Reviews Section */}
+            <section className="border-t border-outline-variant/30 pt-16 pb-24">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+                    {/* Review Form */}
+                    <div className="lg:col-span-1">
+                        <h2 className="text-2xl font-black text-on-surface mb-6">Đánh giá sản phẩm</h2>
+                        {currentUser ? (
+                            <form onSubmit={handleSubmitReview} className="space-y-4 bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10">
+                                <div>
+                                    <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Xếp hạng</label>
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button"
+                                                onClick={() => setNewRating(star)}
+                                                className={`material-symbols-outlined text-2xl transition-colors ${newRating >= star ? 'text-amber-400' : 'text-outline-variant'}`}
+                                                style={{ fontVariationSettings: `'FILL' ${newRating >= star ? 1 : 0}` }}
+                                            >
+                                                star
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Bình luận</label>
+                                    <textarea
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        className="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary min-h-[120px]"
+                                        placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                                        required
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={submittingReview}
+                                    className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                >
+                                    {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10 text-center">
+                                <p className="text-sm text-secondary mb-4">Vui lòng đăng nhập để đánh giá sản phẩm.</p>
+                                <Link to="/login" className="text-primary font-bold hover:underline text-sm uppercase tracking-wider">Đăng nhập ngay</Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Reviews List */}
+                    <div className="lg:col-span-2">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-black text-on-surface">Nhận xét ({reviews.length})</h2>
+                            <div className="flex items-center gap-2 text-sm font-bold text-on-surface bg-surface-container px-4 py-2 rounded-full">
+                                <span className="material-symbols-outlined text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                                {product.avg_rating?.toFixed(1) || 0} / 5
+                            </div>
+                        </div>
+
+                        {reviews.length === 0 ? (
+                            <div className="text-center py-12 bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant">
+                                <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">rate_review</span>
+                                <p className="text-secondary">Chưa có đánh giá nào cho sản phẩm này.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {reviews.map((review) => (
+                                    <div key={review._id} className="bg-surface-container-lowest p-6 rounded-2xl ring-1 ring-outline/10">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                                    {review.user_id?.avatar ? (
+                                                        <img src={review.user_id.avatar} alt={review.user_id.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-primary font-bold">{review.user_id?.name?.charAt(0) || 'U'}</span>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-on-surface text-sm">{review.user_id?.name || 'Người dùng'}</h4>
+                                                    <p className="text-xs text-outline">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center text-amber-400">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <span
+                                                        key={star}
+                                                        className="material-symbols-outlined text-sm"
+                                                        style={{ fontVariationSettings: `'FILL' ${review.rating >= star ? 1 : 0}` }}
+                                                    >
+                                                        star
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-secondary leading-relaxed mb-4">{review.comment}</p>
+                                        {(currentUser?._id === review.user_id?._id || isAdminViewer) && (
+                                            <button
+                                                onClick={() => handleDeleteReview(review._id)}
+                                                className="text-xs font-bold text-error hover:underline flex items-center gap-1"
+                                            >
+                                                <span className="material-symbols-outlined text-xs">delete</span>
+                                                Xoá đánh giá
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

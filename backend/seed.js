@@ -16,7 +16,9 @@ const OrderItem = require('./src/models/orderItem.model');
 
 const seedData = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
+        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nnptudm_finalexam';
+        console.log(`Connecting to MongoDB: ${mongoUri}`);
+        await mongoose.connect(mongoUri);
 
         await Promise.all([
             Role.deleteMany({}),
@@ -39,7 +41,7 @@ const seedData = async () => {
         const userRoleId = roles[1]._id;
 
         console.log('Seeding Users...');
-        const passwordHash = await bcrypt.hash('123456', 10);
+        const passwordHash = await bcrypt.hash('password123', 10);
         const users = await User.insertMany([
             {
                 name: 'System Admin',

@@ -80,7 +80,7 @@ const deleteCategory = async (req, res) => {
         const category = await Category.findById(req.params.id);
 
         if (category) {
-            await category.remove();
+            await Category.deleteOne({ _id: req.params.id });
             res.json({ message: 'Đã xoá danh mục' });
         } else {
             res.status(404).json({ message: 'Không tìm thấy danh mục' });
