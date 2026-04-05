@@ -206,138 +206,177 @@ export default function Header() {
           </div>
         </div>
       )}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
-      <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-        <div className="flex items-center gap-8">
-          <Link className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 font-headline" to="/">Lumina Mobile</Link>
-          <div className="hidden md:flex items-center gap-6">
-            {navItems.map(item => (
-              <NavLink 
-                key={item.to} 
-                to={item.to}
-                end={item.end}
-                className={({isActive}) => isActive 
-                  ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-blue-600 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80"}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-            {user?.role === 'ADMIN' && (
-              <NavLink
-                to="/admin"
-                className={({isActive}) => isActive 
-                  ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-blue-600 font-sans antialiased tracking-tight transition-all duration-300 hover:opacity-80"}
-              >
-                Quản trị
-              </NavLink>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative hidden sm:block" ref={searchRef}>
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-                search
-              </span>
-              <input 
-                className="bg-surface-container-highest border-none rounded-full pl-11 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary w-64 lg:w-80 transition-all shadow-sm" 
-                placeholder="Tìm sản phẩm, thương hiệu..." 
-                type="text" 
-                value={searchText}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                onFocus={() => setSearchOpen(true)}
-              />
-            </div>
-            
-            {searchOpen && (searchText.trim() || searchLoading) && (
-              <div className="absolute top-full mt-3 w-80 lg:w-96 bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl border border-outline-variant/20 overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
-                {searchLoading ? (
-                  <div className="p-8 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : suggestions.length > 0 ? (
-                  <div className="p-3">
-                    <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-outline">Gợi ý sản phẩm</p>
-                    <div className="mt-1 space-y-1">
-                      {suggestions.map((p) => (
-                        <button
-                          key={p._id}
-                          onClick={() => {
-                            navigate(`/products/${p._id}`);
-                            setSearchOpen(false);
-                          }}
-                          className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-surface-container-low transition-colors text-left group"
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center overflow-hidden border border-outline-variant/10">
-                            {p.image ? (
-                              <img src={p.image} alt={p.name} className="w-full h-full object-contain p-1 group-hover:scale-110 transition-transform" />
-                            ) : (
-                              <span className="material-symbols-outlined text-outline">image</span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">{p.name}</p>
-                            <p className="text-xs text-on-surface-variant font-medium">{p.price?.toLocaleString()} VNĐ</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                    <button 
-                      onClick={() => goSearch(searchText)}
-                      className="w-full mt-2 py-3 border-t border-outline-variant/10 text-xs font-black text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-b-xl transition-colors"
-                    >
-                      XEM TẤT CẢ KẾT QUẢ CHO "{searchText}"
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-10 text-center">
-                    <span className="material-symbols-outlined text-4xl text-outline mb-3">search_off</span>
-                    <p className="text-sm font-bold text-on-surface-variant">Không tìm thấy sản phẩm nào</p>
-                  </div>
-                )}
+      <nav className="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/20 dark:border-slate-800/50 shadow-sm transition-all duration-300">
+        <div className="flex items-center justify-between px-6 h-20 max-w-7xl mx-auto">
+          {/* Logo Section */}
+          <div className="flex items-center gap-10">
+            <Link className="flex items-center gap-2 group" to="/">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform duration-300">
+                <span className="material-symbols-outlined text-white text-2xl" style={{fontVariationSettings: "'FILL' 1"}}>bolt</span>
               </div>
-            )}
-          </div>
-          {user && (
-            <Link to="/orders" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95" title="Lịch sử đơn hàng">
-              <span className="material-symbols-outlined">receipt_long</span>
+              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Lumina</span>
             </Link>
-          )}
-          <Link to="/cart" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
-            <span className="material-symbols-outlined">shopping_cart</span>
-          </Link>
-          <Link to="/wishlist" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
-            <span className="material-symbols-outlined">favorite</span>
-          </Link>
-          
-          {user ? (
-            <div className="flex items-center gap-4 border-l border-outline-variant pl-4 ml-2">
-              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full border border-primary/20" />
-                ) : (
-                  <span className="material-symbols-outlined text-primary">account_circle</span>
-                )}
-                <span className="text-sm font-bold text-on-surface hidden lg:block">{user.name}</span>
-              </Link>
-              <button 
-                onClick={() => setIsLogoutConfirmOpen(true)}
-                className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:text-red-500 active:scale-95 flex items-center gap-1"
-                title="Đăng xuất"
-              >
-                <span className="material-symbols-outlined text-xl">logout</span>
-              </button>
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              {navItems.map(item => (
+                <NavLink 
+                  key={item.to} 
+                  to={item.to}
+                  end={item.end}
+                  className={({isActive}) => isActive 
+                    ? "relative py-1 text-primary font-bold text-sm tracking-wide after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full transition-all" 
+                    : "relative py-1 text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm tracking-wide transition-all hover:after:content-[''] hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-primary/30 hover:after:rounded-full"}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+              {user?.role === 'ADMIN' && (
+                <NavLink
+                  to="/admin"
+                  className={({isActive}) => isActive 
+                    ? "relative py-1 text-primary font-bold text-sm tracking-wide after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full transition-all" 
+                    : "relative py-1 text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm tracking-wide transition-all hover:after:content-[''] hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-primary/30 hover:after:rounded-full"}
+                >
+                  Quản trị
+                </NavLink>
+              )}
             </div>
-          ) : (
-            <Link to="/login" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95">
-              <span className="material-symbols-outlined">account_circle</span>
-            </Link>
-          )}
+          </div>
+
+          {/* Right Action Section */}
+          <div className="flex items-center gap-3">
+            {/* Search Bar */}
+            <div className="relative hidden lg:block" ref={searchRef}>
+              <div className="relative group">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-xl">
+                  search
+                </span>
+                <input 
+                  className="bg-slate-100 dark:bg-slate-800 border-none rounded-2xl pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 w-72 transition-all duration-300 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 shadow-inner" 
+                  placeholder="Tìm kiếm sản phẩm đỉnh cao..." 
+                  type="text" 
+                  value={searchText}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  onFocus={() => setSearchOpen(true)}
+                />
+              </div>
+              
+              {searchOpen && (searchText.trim() || searchLoading) && (
+                <div className="absolute top-full mt-4 w-[450px] -right-10 bg-white dark:bg-slate-900 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 dark:border-slate-800 overflow-hidden z-[60] animate-in fade-in slide-in-from-top-4 duration-300">
+                  {searchLoading ? (
+                    <div className="p-12 flex items-center justify-center">
+                      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <div className="p-4">
+                      <div className="flex items-center justify-between px-2 mb-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả hàng đầu</span>
+                        <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-bold">{suggestions.length} gợi ý</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {suggestions.map((p) => (
+                          <button
+                            key={p._id}
+                            onClick={() => {
+                              navigate(`/products/${p._id}`);
+                              setSearchOpen(false);
+                            }}
+                            className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all text-left group"
+                          >
+                            <div className="w-14 h-14 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm group-hover:border-primary/20 transition-colors">
+                              {p.image ? (
+                                <img src={p.image} alt={p.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
+                              ) : (
+                                <span className="material-symbols-outlined text-slate-300">image</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">{p.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs font-bold text-primary">{p.price?.toLocaleString()} ₫</span>
+                                <span className="text-[10px] text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md capitalize">{p.brandName}</span>
+                              </div>
+                            </div>
+                            <span className="material-symbols-outlined text-slate-300 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1">chevron_right</span>
+                          </button>
+                        ))}
+                      </div>
+                      <button 
+                        onClick={() => goSearch(searchText)}
+                        className="w-full mt-4 py-4 border-t border-slate-50 dark:border-slate-800 text-[11px] font-bold text-primary hover:bg-primary/5 rounded-b-2xl transition-all flex items-center justify-center gap-2"
+                      >
+                        XEM TẤT CẢ KẾT QUẢ CHO "{searchText}"
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-16 text-center">
+                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="material-symbols-outlined text-3xl text-slate-400">search_off</span>
+                      </div>
+                      <p className="text-base font-bold text-slate-900 dark:text-white">Không có kết quả</p>
+                      <p className="text-xs text-slate-500 mt-1">Vui lòng thử từ khóa khác</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Icons */}
+            <div className="flex items-center gap-1.5 ml-2">
+              <Link to="/wishlist" className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-500 rounded-xl transition-all active:scale-90" title="Yêu thích">
+                <span className="material-symbols-outlined text-2xl">favorite</span>
+              </Link>
+              <Link to="/cart" className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary rounded-xl transition-all active:scale-90 relative" title="Giỏ hàng">
+                <span className="material-symbols-outlined text-2xl">shopping_cart</span>
+              </Link>
+              {user && (
+                <Link to="/orders" className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary rounded-xl transition-all active:scale-90" title="Đơn hàng">
+                  <span className="material-symbols-outlined text-2xl">receipt_long</span>
+                </Link>
+              )}
+            </div>
+
+            {/* User Section */}
+            <div className="flex items-center ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <Link to="/profile" className="flex items-center gap-3 pl-1 pr-3 py-1 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all group">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-primary text-xl">person</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="hidden lg:block overflow-hidden">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[100px]">{user.name}</p>
+                      <p className="text-[10px] text-slate-500 font-medium leading-tight">Thành viên</p>
+                    </div>
+                  </Link>
+                  <button 
+                    onClick={() => setIsLogoutConfirmOpen(true)}
+                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-xl">logout</span>
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/25 hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
+                >
+                  Đăng nhập
+                  <span className="material-symbols-outlined text-sm">login</span>
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
       </nav>
     </>
   );

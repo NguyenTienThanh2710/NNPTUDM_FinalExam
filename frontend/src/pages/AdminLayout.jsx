@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
+import AdminFooter from '../components/AdminFooter';
 
 const menuItems = [
     { to: '/admin', label: 'Tổng quan', icon: 'dashboard', end: true },
@@ -75,19 +76,23 @@ const AdminLayout = ({ title, subtitle, actions, children }) => {
                 </aside>
 
                 {/* Main Content Canvas */}
-                <main className="flex-1 lg:ml-64 p-8 bg-surface">
-                    {/* Header Section */}
-                    {(title || subtitle || actions) && (
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 text-left">
-                            <div>
-                                <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">{title}</h1>
-                                {subtitle && <p className="text-on-surface-variant mt-1">{subtitle}</p>}
+                <main className="flex-1 lg:ml-64 bg-surface flex flex-col">
+                    <div className="p-8 flex-grow">
+                        {/* Header Section */}
+                        {(title || subtitle || actions) && (
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 text-left">
+                                <div>
+                                    <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">{title}</h1>
+                                    {subtitle && <p className="text-on-surface-variant mt-1">{subtitle}</p>}
+                                </div>
+                                {actions && <div className="flex gap-3">{actions}</div>}
                             </div>
-                            {actions && <div className="flex gap-3">{actions}</div>}
-                        </div>
-                    )}
+                        )}
+                        
+                        {children}
+                    </div>
                     
-                    {children}
+                    <AdminFooter />
                 </main>
             </div>
         </div>

@@ -67,9 +67,9 @@ app.post('/api/upload', protect, admin, upload.any(), (req, res) => {
         return;
     }
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const urls = files.map((f) => `${baseUrl}/uploads/${f.filename}`);
-    res.json({ url: urls[0], urls });
+    // Return relative paths for better portability
+    const paths = files.map((f) => `uploads/${f.filename}`);
+    res.json({ url: paths[0], urls: paths });
 });
 
 // Mount routers
@@ -130,6 +130,15 @@ const start = async () => {
 
         process.on('SIGINT', shutdown);
         process.on('SIGTERM', shutdown);
+
+        process.on('unhandledRejection', (err) => {
+            console.error('Unhandled Rejection at:', err);
+        });
+
+        process.on('uncaughtException', (err) => {
+            console.error('Uncaught Exception:', err);
+            process.exit(1);
+        });
     } catch (err) {
         console.error(err.message);
         process.exit(1);

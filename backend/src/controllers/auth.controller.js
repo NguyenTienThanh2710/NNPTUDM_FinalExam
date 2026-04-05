@@ -88,7 +88,7 @@ const login = async (req, res) => {
         
         // Check if account is active
         if (user.status === 'locked') {
-            return res.status(403).json({ msg: 'Tài khoản đã bị khóa' });
+            return res.status(403).json({ msg: 'Tài khoản của bạn đã bị khóa, vui lòng liên hệ admin để mở khóa' });
         }
 
         // Create and return JWT
@@ -260,7 +260,7 @@ const googleLogin = async (req, res) => {
 
         // Check if account is active
         if (user.status === 'locked') {
-            return res.status(403).json({ msg: 'Tài khoản đã bị khóa' });
+            return res.status(403).json({ msg: 'Tài khoản của bạn đã bị khóa, vui lòng liên hệ admin để mở khóa' });
         }
 
         // Create and return JWT

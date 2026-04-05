@@ -4,17 +4,33 @@ import api from '../services/api';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState([]);
+    const [stats, setStats] = useState(null);
     const [formName, setFormName] = useState('');
     const [formDescription, setFormDescription] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [editingCategoryId, setEditingCategoryId] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [deleteConfirmCategoryId, setDeleteConfirmCategoryId] = useState(null);
     const [notice, setNotice] = useState(null);
     const formRef = useRef(null);
     const nameInputRef = useRef(null);
 
     useEffect(() => {
-        api.get('/categories').then(res => setCategories(res.data)).catch(console.error);
+        const fetchData = async () => {
+            try {
+                const [resCat, resStats] = await Promise.all([
+                    api.get('/categories'),
+                    api.get('/orders/dashboard')
+                ]);
+                setCategories(resCat.data);
+                setStats(resStats.data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -166,7 +182,7 @@ const AdminCategories = () => {
                                                     <span className="font-bold text-on-surface">{cat.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-sm text-secondary line-clamp-1 max-w-[150px] mt-2 block border-0">{cat.description}</td>
+                                            <td className="px-6 py-5 text-sm text-secondary truncate max-w-[200px]">{cat.description}</td>
                                             <td className="px-6 py-5 text-sm font-bold text-on-surface text-center lg:table-cell">{(cat.product_count ?? 0).toLocaleString()}</td>
                                             <td className="px-6 py-5">
                                                 {cat.product_count > 0 ? (
@@ -288,7 +304,9 @@ const AdminCategories = () => {
                     </div>
                     <div>
                         <p className="text-xs font-bold text-green-600 uppercase tracking-widest">Đang hiển thị</p>
-                        <p className="text-2xl font-black text-on-surface">04</p>
+                        <p className="text-2xl font-black text-on-surface">
+                            {categories.filter(c => (c.product_count || 0) > 0).length}
+                        </p>
                     </div>
                 </div>
                 <div className="bg-orange-50 rounded-2xl p-6 border border-orange-100 flex items-center gap-5">
@@ -297,7 +315,9 @@ const AdminCategories = () => {
                     </div>
                     <div>
                         <p className="text-xs font-bold text-orange-600 uppercase tracking-widest">SP chưa phân loại</p>
-                        <p className="text-2xl font-black text-on-surface">12</p>
+                        <p className="text-2xl font-black text-on-surface">
+                            {stats?.unclassifiedProductCount || 0}
+                        </p>
                     </div>
                 </div>
             </div>

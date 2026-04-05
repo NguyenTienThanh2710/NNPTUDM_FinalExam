@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getImageURL } from '../utils/imageUtils';
 
 const statusStyles = (status) => {
     switch (status) {
@@ -147,6 +150,57 @@ const AdminOrders = () => {
         }
     };
 
+    const handleExportReport = (type = 'txt') => {
+        if (!orders.length) return;
+        const timestamp = new Date().toLocaleString('vi-VN');
+        const filename = `Bao_cao_don_hang_${new Date().getTime()}`;
+
+        if (type === 'pdf') {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('DANH SÁCH ĐƠN HÀNG', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Ngày xuất: ${timestamp}`, 105, 22, { align: 'center' });
+
+            const data = orders.map((o, i) => [
+                i + 1,
+                o._id.toUpperCase(),
+                o.user_id?.name || 'N/A',
+                new Date(o.created_at).toLocaleDateString('vi-VN'),
+                `${o.total_price?.toLocaleString()} ₫`,
+                getStatusText(o.status)
+            ]);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['STT', 'Mã đơn', 'Khách hàng', 'Ngày đặt', 'Tổng tiền', 'Trạng thái']],
+                body: data,
+                headStyles: { fillColor: [0, 62, 199] }
+            });
+
+            doc.save(`${filename}.pdf`);
+            return;
+        }
+
+        let content = `BÁO CÁO DANH SÁCH ĐƠN HÀNG - ${timestamp}\n`;
+        content += `-------------------------------------------\n`;
+        content += `Tổng số đơn hàng: ${orders.length}\n`;
+        content += `Tổng doanh thu: ${orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total_price || 0), 0).toLocaleString()} ₫\n\n`;
+        
+        content += `CHI TIẾT ĐƠN HÀNG:\n`;
+        orders.forEach((o, i) => {
+            content += `${i+1}. Mã: ${o._id.toUpperCase()} | Khách: ${o.user_id?.name || 'N/A'} | Tổng: ${o.total_price?.toLocaleString()} ₫ | Trạng thái: ${getStatusText(o.status)}\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.txt`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     const filteredOrders = useMemo(() => {
         if (statusFilter === 'pending') return orders.filter((o) => o.status === 'pending');
         if (statusFilter === 'shipping') return orders.filter((o) => o.status === 'shipped' || o.status === 'processing');
@@ -196,13 +250,6 @@ const AdminOrders = () => {
     return (
         <AdminLayout
             title="Quản lý Đơn hàng"
-            
-            actions={
-                <button className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-2 active:scale-95">
-                    <span className="material-symbols-outlined text-sm">download</span>
-                    Xuất báo cáo
-                </button>
-            }
         >
             {notice && (
                 <div className={`mb-6 rounded-xl px-4 py-3 border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
@@ -486,7 +533,7 @@ const AdminOrders = () => {
                                                                     <div className="flex items-center gap-3">
                                                                         {item.product_id?.images?.[0] && (
                                                                             <img
-                                                                                src={item.product_id.images[0]}
+                                                                                src={getImageURL(item.product_id.images[0])}
                                                                                 alt={item.product_id?.name || 'Sản phẩm'}
                                                                                 className="w-10 h-10 rounded-lg object-cover border border-outline-variant/20"
                                                                             />

@@ -47,14 +47,24 @@ const addToCart = async (req, res) => {
         // Check if item already in cart
         let cartItem = await CartItem.findOne({ cart_id: cart._id, product_id });
 
+        // Check stock availability
+        const currentQuantity = cartItem ? cartItem.quantity : 0;
+        const requestedQuantity = currentQuantity + parseInt(quantity);
+        
+        if (product.stock < requestedQuantity) {
+            return res.status(400).json({ 
+                message: `Chỉ còn ${product.stock} sản phẩm trong kho. Bạn đã có ${currentQuantity} trong giỏ.` 
+            });
+        }
+
         if (cartItem) {
-            cartItem.quantity += parseInt(quantity);
+            cartItem.quantity = requestedQuantity;
             await cartItem.save();
         } else {
             cartItem = await CartItem.create({
                 cart_id: cart._id,
                 product_id,
-                quantity
+                quantity: requestedQuantity
             });
         }
 
@@ -82,6 +92,14 @@ const updateCartItem = async (req, res) => {
         const cart = await Cart.findById(cartItem.cart_id);
         if (cart.user_id.toString() !== req.user.id) {
             return res.status(401).json({ message: 'Không có quyền thực hiện' });
+        }
+
+        // Check stock availability before update
+        const product = await Product.findById(cartItem.product_id);
+        if (product.stock < quantity) {
+            return res.status(400).json({ 
+                message: `Không thể cập nhật. Chỉ còn ${product.stock} sản phẩm trong kho.` 
+            });
         }
 
         cartItem.quantity = quantity;

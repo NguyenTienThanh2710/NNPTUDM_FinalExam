@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getImageURL } from '../utils/imageUtils';
 
 const getStatusStyle = (status) => {
     switch(status) {
@@ -127,6 +130,57 @@ const AdminCustomers = () => {
         }
     };
 
+    const handleExportReport = (type = 'txt') => {
+        if (!customers.length) return;
+        const timestamp = new Date().toLocaleString('vi-VN');
+        const filename = `Danh_sach_khach_hang_${new Date().getTime()}`;
+
+        if (type === 'pdf') {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('DANH SÁCH KHÁCH HÀNG', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Ngày xuất: ${timestamp}`, 105, 22, { align: 'center' });
+
+            const data = customers.map((u, i) => [
+                i + 1,
+                u.name,
+                u.email,
+                u.phone || 'N/A',
+                u.order_count || 0,
+                u.is_vip ? 'VIP' : 'Thường'
+            ]);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['STT', 'Tên', 'Email', 'SĐT', 'Đơn hàng', 'Loại']],
+                body: data,
+                headStyles: { fillColor: [0, 62, 199] }
+            });
+
+            doc.save(`${filename}.pdf`);
+            return;
+        }
+
+        let content = `DANH SÁCH KHÁCH HÀNG - ${timestamp}\n`;
+        content += `-------------------------------------------\n`;
+        content += `Tổng số người dùng: ${customers.length}\n`;
+        content += `Khách hàng VIP: ${customers.filter(u => u.is_vip).length}\n\n`;
+        
+        content += `CHI TIẾT NGƯỜI DÙNG:\n`;
+        customers.forEach((u, i) => {
+            content += `${i+1}. Tên: ${u.name} | Email: ${u.email} | SĐT: ${u.phone || 'N/A'} | Đơn hàng: ${u.order_count || 0} | VIP: ${u.is_vip ? 'Có' : 'Không'}\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.txt`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     const customerUsers = useMemo(() => {
         return customers.filter((u) => u.role_id?.name === 'USER');
     }, [customers]);
@@ -178,20 +232,14 @@ const AdminCustomers = () => {
 
     return (
         <AdminLayout
-            title="Danh sách Người dùng"
-            
-            actions={(
-                <>
-                    <button className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors">
-                        <span className="material-symbols-outlined text-lg">file_download</span>
-                        Xuất báo cáo
-                    </button>
-                    <button className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
-                        <span className="material-symbols-outlined text-lg">person_add</span>
-                        Thêm khách hàng
-                    </button>
-                </>
-            )}
+            title="Quản lý Khách hàng"
+            subtitle="Theo dõi lộ trình khách hàng và quản lý cấp độ thành viên"
+            actions={
+                <button className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
+                    <span className="material-symbols-outlined text-lg">person_add</span>
+                    Thêm khách hàng
+                </button>
+            }
         >
             {notice && (
                 <div className={`mb-6 rounded-xl px-4 py-3 shadow-sm border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
@@ -318,7 +366,7 @@ const AdminCustomers = () => {
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-10 w-10 rounded-full bg-primary-fixed text-primary font-bold flex items-center justify-center shadow-sm overflow-hidden text-xs">
-                                                    {customer.avatar ? <img src={customer.avatar} className="object-cover w-full h-full" /> : customer.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                                    {customer.avatar ? <img src={getImageURL(customer.avatar)} className="object-cover w-full h-full" /> : customer.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">

@@ -1,4 +1,6 @@
 const Product = require('../models/product.model');
+const OrderItem = require('../models/orderItem.model');
+const CartItem = require('../models/cartItem.model');
 
 // @desc    Create a product
 // @route   POST /api/products
@@ -118,6 +120,14 @@ const deleteProduct = async (req, res) => {
         const product = await Product.findById(req.params.id);
 
         if (product) {
+            // Check if product is part of any order (Constraint enforcement)
+            const hasOrders = await OrderItem.exists({ product_id: req.params.id });
+            if (hasOrders) {
+                return res.status(400).json({ 
+                    message: 'Không thể xoá sản phẩm này vì đã có đơn hàng liên quan. Vui lòng sử dụng tính năng "Ẩn" để ngừng kinh doanh.' 
+                });
+            }
+
             await Product.deleteOne({ _id: req.params.id });
             res.json({ message: 'Đã xoá sản phẩm' });
         } else {
