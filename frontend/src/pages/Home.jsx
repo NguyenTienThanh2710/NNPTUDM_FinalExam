@@ -1,7 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
+import { getImageURL } from '../utils/imageUtils';
 
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get('/products');
+        setProducts(res.data);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const newArrivals = products.slice(0, 4);
+  const bestSellers = products.slice(4, 8);
   return (
     <main className="pt-20">
       {/* Khu vực nổi bật */}
@@ -97,124 +118,87 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
-              <div className="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
-                <span className="absolute top-4 left-4 z-20 bg-primary text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">-15%</span>
-                <img alt="Samsung Galaxy S24" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMUCjd4A_o8ZIsz9xaLlT_xCnOarxBdusT0Ztb-6RX2lD2oJ5qUQC7QQ_FqfGRhUlpVBXf-CNv3OXgcVseTZWGDKYQ_pdTY3cSgQsleJKvTszJpuIP8lSZxc2eZABlg-zT3YyhTJZHgccaosmD1SLwhqCBVYWf5OlLPMWVB9yjt4gvbwwZJK2qnUpM2s0i8fBRWRWN390x-9Df_IUgd9uVt2l02Z9M_sOEdib0DC-UL9bHZU3ekXvHXZ8mdyRS6Qf5H5aWyEUauA" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="text-[10px] font-bold text-secondary ml-1">(124)</span>
-                </div>
-                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Samsung Galaxy S24 Ultra</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-black text-on-surface">$1,199.00</span>
-                  <span className="text-sm text-secondary line-through">$1,399.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
-              <div className="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
-                <span className="absolute top-4 left-4 z-20 bg-error text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">NỔI BẬT</span>
-                <img alt="iPhone 15" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGtY34KJ-3YZdzpy2wzl9vjIUZje3yXz3XQJIF5ZkJOCUYr3_Z4QGvsmS3bWCu4fCjjP8uCycDxfGK2kmG06M8DJ8b5sN1vdA_FkhOk2-DV-T7jx98G0lRR528Uh0nQOAOr8xFdlF70mPH4ABwzSJxG6v-mXKEKyHtGwBs471gw-6qIwjVAHlSxaVnWdBMsTydbm9t3amF8wIpnNHnotFjGRMoXDpuGZ8b3dU2B1LcbwgePXHw6-43d5V5F7bUdhMUZ7wY2nta1A" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="text-[10px] font-bold text-secondary ml-1">(89)</span>
-                </div>
-                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">iPhone 15 Blue 128GB</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-black text-on-surface">$799.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
-              <div className="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
-                <img alt="Oppo Find X7" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEjGHrqvN8ZRYJvCZk1XYPf30EIApZ9TTbukU5VCJ2NhS-64kVo41IZFWls-iU559TMJIgMzLfxqAkFVofsPPQFKx1JCpsjhU8Hf7Zx6snX2YgD3Ndf7gkzqLQWXAl5f5xikdJd-6oo1rWwP1cZxt4ocbA4N__lxX9umS2kcq3HP2Unf-21iNjOb-IamCFDObsdReLGT_nHg9ckRHX0ujBqphuDBMLqtxC4bzxjEN-0THXHPgnMdtwGa9-_lnaR8ylzTp8s7PkaQ" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-slate-300 text-sm">star</span>
-                  <span className="text-[10px] font-bold text-secondary ml-1">(45)</span>
-                </div>
-                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Oppo Find X7 Pro</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-black text-on-surface">$949.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl">
-              <div className="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
-                <span className="absolute top-4 left-4 z-20 bg-primary text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">-20%</span>
-                <img alt="Headphones" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASTI5F1N5m5bQzqXDBpPwwb15aA-JgrecnCEyGH4_1bww3KXoURJvYSTz2AzAcvcHSmhwvPdzrtCxOtitjDLm02gHxoFcoiUvWyg4n3mR3dWS_GVoSQcfoABEPIPBCD-HUlzdnfudTyTzmIsKnGpIRhB6oyH7VOuk0Z6F_knvZo4GKaChUq3tWMQlEUzbIh-QYsVoapN4Fl7cv6ozcOu-B615FAE9tpY7AO88iQqA46fQnu-RFUc2zMEwu7Lqn2aE1LskhTORUcQ" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                  <span className="text-[10px] font-bold text-secondary ml-1">(210)</span>
-                </div>
-                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">Lumina Sonic Pro Max</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-black text-on-surface">$299.00</span>
-                  <span className="text-sm text-secondary line-through">$379.00</span>
-                </div>
-              </div>
-            </div>
+            {loading ? (
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="aspect-[4/5] bg-surface-container animate-pulse rounded-xl" />
+              ))
+            ) : newArrivals.length > 0 ? (
+              newArrivals.map(product => (
+                <Link key={product._id} to={`/products/${product._id}`} className="bg-surface-container-lowest rounded-xl p-6 group transition-all hover:shadow-2xl block">
+                  <div className="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface">
+                    {product.stock < 5 && product.stock > 0 && (
+                      <span className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">Sắp hết hàng</span>
+                    )}
+                    {product.stock === 0 && (
+                      <span className="absolute top-4 left-4 z-20 bg-error text-white text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest font-label">Hết hàng</span>
+                    )}
+                    <img alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" src={getImageURL(product.images?.[0])} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(s => (
+                         <span key={s} className="material-symbols-outlined text-amber-400 text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
+                      ))}
+                      <span className="text-[10px] font-bold text-secondary ml-1">({product.num_reviews || 0})</span>
+                    </div>
+                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors truncate">{product.name}</h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black text-on-surface">{product.price?.toLocaleString()} ₫</span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="col-span-4 text-center text-secondary">Chưa có sản phẩm mới.</p>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Bán chạy nhất */}
+      {/* Bán chạy nhất - Dynamic Data from DB */}
       <section className="py-24 max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight text-on-surface font-headline">Bán chạy nhất</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-on-surface font-headline">Gợi ý dành cho bạn</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-auto">
-          <div className="md:col-span-8 bg-slate-900 rounded-3xl overflow-hidden relative flex flex-col justify-center p-12 text-white min-h-[400px]">
-            <div className="relative z-10 max-w-sm">
-              <span className="text-primary-fixed-dim text-xs font-bold tracking-widest font-label uppercase">GỢI Ý NỔI BẬT</span>
-              <h3 className="text-4xl font-black mt-4 mb-4 font-headline leading-tight">Pixel 8 Pro. <br />Phiên bản Mint.</h3>
-              <p className="text-slate-300 mb-8">Trải nghiệm Google AI trong một màu sắc mới đầy cuốn hút. Nổi bật ở mọi góc nhìn.</p>
-              <Link to="/products" className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold transition-all hover:bg-slate-200 inline-block">Mua ngay</Link>
+          {bestSellers[0] ? (
+            <div className="md:col-span-8 bg-slate-900 rounded-3xl overflow-hidden relative flex flex-col justify-center p-12 text-white min-h-[400px]">
+              <div className="relative z-10 max-w-sm">
+                <span className="text-primary-fixed-dim text-xs font-bold tracking-widest font-label uppercase">SẢN PHẨM NỔI BẬT</span>
+                <h3 className="text-4xl font-black mt-4 mb-4 font-headline leading-tight">{bestSellers[0].name}</h3>
+                <p className="text-slate-300 mb-8 line-clamp-3">{bestSellers[0].description || 'Trải nghiệm đỉnh cao công nghệ với thiết kế sang trọng và hiệu năng vượt trội.'}</p>
+                <Link to={`/products/${bestSellers[0]._id}`} className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold transition-all hover:bg-slate-200 inline-block">Mua ngay</Link>
+              </div>
+              <img alt={bestSellers[0].name} className="absolute -right-20 bottom-0 w-2/3 h-full object-contain pointer-events-none opacity-80" src={getImageURL(bestSellers[0].images?.[0])} />
             </div>
-            <img alt="Pixel 8 Pro" className="absolute -right-20 bottom-0 w-2/3 h-full object-contain pointer-events-none opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfGCA4HtcJRoRJl0_rbMganJbMQcpiRNV5K5DmfjpDyM2kSXNqGj4cL1fHdOL1AH48VjE5xP8WQkkrhkTLCg-wSvlpeLQpxvhoXOe58HYQeSmX3qZGO6wHiSi14wfkAAsbnVme8t9PJV8NeO6ksbYORh0PAJxwZr7-s1ldk_8R7MWTnEgbss4p7D6j6yiht8Sbe00ROEUcxu7wZfBDRfny89qy5tniYMHtJVwa9Eyh7eUobYX4nOLMY63gMwsPV_hBYMnlFvMSBQ" />
-          </div>
+          ) : (
+             <div className="md:col-span-8 bg-slate-900 rounded-3xl p-12 text-white min-h-[400px] flex items-center justify-center italic text-slate-500">Đang cập nhật sản phẩm nổi bật...</div>
+          )}
+          
           <div className="md:col-span-4 grid grid-rows-2 gap-8">
-            <Link to="/products" className="bg-surface-container-high rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden block">
-              <div>
-                <h4 className="font-bold text-xl mb-1">Watch Series 9</h4>
-                <p className="text-secondary text-sm">Thông minh hơn. Sáng hơn. Mạnh mẽ hơn.</p>
-              </div>
-              <img alt="Smartwatch" className="w-32 self-end group-hover:scale-110 transition-transform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfTfpCqdg7UHkZmuzMYBME1W52NHXpm60WLRv5Swu3bcvqjzeyCtqEg-081FpsSaRnCsx4HeCl0Csfhk-09pkD_Xl9vK3GEIdKLZvsfT3H7JYMTm3a9FnXTPsOQOFDmC5Lqri9nBrvTFVeJQ_ZLxwv8G4m26md0WPjDvwbcvvroE-oF24LFC7r8Mka7t55hcBd4H7DLs-0oHB19A8tlsFgOlTr7pQTdLj8VvYdhFx9U5iKNsLNIRcWLhYdbv1XD8Ve7HS3OlbQQA" />
-            </Link>
-            <Link to="/products" className="bg-primary-container rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden text-white block">
-              <div>
-                <h4 className="font-bold text-xl mb-1">Lumina Pods</h4>
-                <p className="text-primary-fixed-dim text-sm">Yên tĩnh tuyệt đối. Âm thanh thuần khiết.</p>
-              </div>
-              <img alt="Earbuds" className="w-32 self-end group-hover:scale-110 transition-transform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8ykMfKSuQB3_H5VvdXD-KhiSg46Agn_8uE0BLp7Drg94m2BBa85f12zaES95t0Ndk8ebgfgS11g8KunbloEUDpdw-yrh1OZ9LEzFWpOjA4Osf0Nko1VC9vQNL8fP4iky7_XQsgw22y-a-F5_StX3ytFJipqaKLI1oPJQDdb1mDQcDU1_OvPiiVZrk5NNsFBNXnmvWL6MuYDHiO2TSUn0Y5ORcebyVRuAKdUlHLoWfdJFzuJc6LNNjTJmVuv7IKhkqpmMRKS0cmw" />
-            </Link>
+            {bestSellers[1] ? (
+              <Link to={`/products/${bestSellers[1]._id}`} className="bg-surface-container-high rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden block">
+                <div>
+                  <h4 className="font-bold text-xl mb-1 truncate">{bestSellers[1].name}</h4>
+                  <p className="text-secondary text-sm line-clamp-2">Công nghệ mới nhất, phong cách thời thượng.</p>
+                </div>
+                <img alt={bestSellers[1].name} className="w-32 self-end group-hover:scale-110 transition-transform object-contain aspect-square" src={getImageURL(bestSellers[1].images?.[0])} />
+              </Link>
+            ) : (
+                <div className="bg-surface-container-high rounded-3xl p-8 flex items-center justify-center italic text-slate-400">Trống</div>
+            )}
+
+            {bestSellers[2] ? (
+              <Link to={`/products/${bestSellers[2]._id}`} className="bg-primary-container rounded-3xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden text-white block">
+                <div>
+                  <h4 className="font-bold text-xl mb-1 truncate">{bestSellers[2].name}</h4>
+                  <p className="text-primary-fixed-dim text-sm line-clamp-2">Âm thanh thuần khiết, trải nghiệm hoàn hảo.</p>
+                </div>
+                <img alt={bestSellers[2].name} className="w-32 self-end group-hover:scale-110 transition-transform object-contain aspect-square" src={getImageURL(bestSellers[2].images?.[0])} />
+              </Link>
+            ) : (
+                <div className="bg-primary-container rounded-3xl p-8 flex items-center justify-center italic text-blue-300">Trống</div>
+            )}
           </div>
         </div>
       </section>

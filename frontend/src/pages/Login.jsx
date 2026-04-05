@@ -63,8 +63,8 @@ const Login = () => {
             } else {
                 window.setTimeout(() => navigate('/products'), 600);
             }
-        } catch (_err) {
-            setError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
         }
     };
 
@@ -73,7 +73,16 @@ const Login = () => {
     };
 
     return (
-        <div className="flex items-center justify-center p-4 min-h-[calc(100vh-200px)] py-20 text-left">
+        <div className="flex items-center justify-center p-4 min-h-screen py-10 relative bg-surface">
+            {/* Back to Home Button */}
+            <Link 
+                to="/" 
+                className="absolute top-8 left-8 flex items-center gap-2 px-4 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-full transition-all border border-outline-variant/10 shadow-sm z-50 group"
+            >
+                <span className="material-symbols-outlined transition-transform group-hover:-translate-x-1">arrow_back</span>
+                <span className="text-sm font-bold">Quay lại</span>
+            </Link>
+
             {notice && (
                 <div className={`fixed top-24 right-6 z-50 max-w-sm w-[min(380px,calc(100vw-48px))] rounded-2xl px-4 py-3 shadow-xl border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
                     <div className="flex items-start gap-3">

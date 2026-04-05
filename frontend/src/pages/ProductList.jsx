@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import wishlistService from '../services/wishlist.service';
+import { getImageURL } from '../utils/imageUtils';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
@@ -357,7 +358,7 @@ const ProductList = () => {
                                 <div className="group" key={product._id}>
                                     <div className="relative aspect-[3/4] bg-surface-container-lowest rounded-xl overflow-hidden mb-5 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 ring-1 ring-outline/10">
                                         {product.images && product.images.length > 0 ? (
-                                            <img alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src={product.images[0]} />
+                                            <img alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src={getImageURL(product.images[0])} />
                                         ) : (
                                             <div className="w-full h-full bg-surface flex items-center justify-center text-outline">Chưa có ảnh</div>
                                         )}
@@ -369,6 +370,20 @@ const ProductList = () => {
                                                     Đã ẩn
                                                 </div>
                                             </>
+                                        )}
+                                        
+                                        {product.stock === 0 && (
+                                            <>
+                                                <div className="absolute inset-0 bg-black/40 z-[4]" />
+                                                <div className="absolute top-4 left-4 z-[10] bg-error text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase">
+                                                    Hết hàng
+                                                </div>
+                                            </>
+                                        )}
+                                        {product.stock > 0 && product.stock < 5 && (
+                                            <div className="absolute top-4 left-4 z-[10] bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase">
+                                                Sắp hết hàng
+                                            </div>
                                         )}
                                         
                                         {/* Wishlist Button */}

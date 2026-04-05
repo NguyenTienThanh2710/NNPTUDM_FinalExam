@@ -8,15 +8,18 @@ const ProductSchema = new Schema({
     },
     price: {
         type: Number,
-        required: true
+        required: true,
+        min: [0, 'Giá không thể nhỏ hơn 0']
     },
     description: {
-        type: String
+        type: String,
+        trim: true
     },
     stock: {
         type: Number,
         required: true,
-        default: 0
+        default: 0,
+        min: [0, 'Số lượng tồn kho không thể nhỏ hơn 0']
     },
     images: [
         {

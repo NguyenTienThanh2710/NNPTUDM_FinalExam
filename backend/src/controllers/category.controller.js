@@ -79,13 +79,22 @@ const deleteCategory = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
 
-        if (category) {
-            await Category.deleteOne({ _id: req.params.id });
-            res.json({ message: 'Đã xoá danh mục' });
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy danh mục' });
+        if (!category) {
+            return res.status(404).json({ message: 'Không tìm thấy danh mục' });
         }
+
+        // Integrity constraint: Check for associated products
+        const productCount = await Product.countDocuments({ category_id: req.params.id });
+        if (productCount > 0) {
+            return res.status(400).json({ 
+                message: `Không thể xoá danh mục này vì đang có ${productCount} sản phẩm trực thuộc. Vui lòng xoá hoặc chuyển sản phẩm sang danh mục khác trước.` 
+            });
+        }
+
+        await Category.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Đã xoá danh mục thành công' });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };

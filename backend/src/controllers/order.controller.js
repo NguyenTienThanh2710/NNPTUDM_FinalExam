@@ -25,6 +25,15 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ message: 'Giỏ hàng đang trống' });
         }
 
+        // Check stock for all items
+        for (const item of cartItems) {
+            if (item.product_id.stock < item.quantity) {
+                return res.status(400).json({ 
+                    message: `Sản phẩm ${item.product_id.name} đã hết hàng hoặc không đủ tồn kho (Còn: ${item.product_id.stock})` 
+                });
+            }
+        }
+
         // Calculate total price
         const totalPrice = cartItems.reduce((total, item) => {
             return total + (item.product_id.price * item.quantity);
@@ -56,17 +65,28 @@ const createOrder = async (req, res) => {
 
         const createdOrder = await order.save();
 
-        // Create order items
-        const orderItemsPromises = cartItems.map(item => {
-            return OrderItem.create({
-                order_id: createdOrder._id,
-                product_id: item.product_id._id,
-                quantity: item.quantity,
-                price: item.product_id.price
-            });
-        });
+        // Create order items and update stock
+        for (const item of cartItems) {
+             // Subtract stock using atomic operation and validation
+             const updatedProduct = await Product.findOneAndUpdate(
+                 { _id: item.product_id._id, stock: { $gte: item.quantity } },
+                 { $inc: { stock: -item.quantity } },
+                 { returnDocument: 'after' }
+             );
 
-        await Promise.all(orderItemsPromises);
+             if (!updatedProduct) {
+                 // This shouldn't normally happen because we checked stock above, 
+                 // but in case of race conditions, we handle it here.
+                 throw new Error(`Sản phẩm ${item.product_id.name} vừa hết hàng.`);
+             }
+
+             await OrderItem.create({
+                 order_id: createdOrder._id,
+                 product_id: item.product_id._id,
+                 quantity: item.quantity,
+                 price: item.product_id.price
+             });
+        }
 
         // Clear cart after order creation
         await CartItem.deleteMany({ cart_id: cart._id });
@@ -74,7 +94,7 @@ const createOrder = async (req, res) => {
         // Log initial order status
         await OrderStatusHistory.create({
             order_id: createdOrder._id,
-            changed_by: req.user.id,
+            changed_by: req.user?._id || req.user?.id,
             status_type: 'order',
             old_value: 'none',
             new_value: 'pending',
@@ -195,20 +215,24 @@ const updateOrderStatus = async (req, res) => {
             'cancelled': []
         };
 
-        if (!transitions[order.status].includes(status)) {
+        const currentStatus = order.status || 'pending';
+        if (!transitions[currentStatus] || !transitions[currentStatus].includes(status)) {
             return res.status(400).json({ 
-                message: `Không thể chuyển trạng thái từ ${order.status} sang ${status}` 
+                message: `Không thể chuyển trạng thái từ ${currentStatus} sang ${status}` 
             });
         }
 
         const oldStatus = order.status;
-        order.status = status;
-        const updatedOrder = await order.save();
+        const updatedOrder = await Order.findByIdAndUpdate(
+            req.params.id,
+            { $set: { status: status } },
+            { returnDocument: 'after', runValidators: false }
+        );
 
         // Log the change
         await OrderStatusHistory.create({
             order_id: order._id,
-            changed_by: req.user.id,
+            changed_by: req.user?._id || req.user?.id,
             status_type: 'order',
             old_value: oldStatus,
             new_value: status,
@@ -228,14 +252,24 @@ const updateOrderStatus = async (req, res) => {
 const getDashboardStats = async (req, res) => {
     try {
         const now = new Date();
-        const startOfToday = new Date(now);
+        // Robust start of today calculation (handles local vs UTC better)
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         startOfToday.setHours(0, 0, 0, 0);
-        const endOfToday = new Date(now);
-        endOfToday.setHours(23, 59, 59, 999);
 
         const revenueTodayAgg = await Order.aggregate([
-            { $match: { created_at: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: 'cancelled' } } },
-            { $group: { _id: null, total: { $sum: '$total_price' }, count: { $sum: 1 } } }
+            { 
+                $match: { 
+                    created_at: { $gte: startOfToday }, 
+                    status: { $ne: 'cancelled' } 
+                } 
+            },
+            { 
+                $group: { 
+                    _id: null, 
+                    total: { $sum: '$total_price' }, 
+                    count: { $sum: 1 } 
+                } 
+            }
         ]);
 
         const revenueToday = revenueTodayAgg[0]?.total || 0;
@@ -294,6 +328,12 @@ const getDashboardStats = async (req, res) => {
             return { name, count: d.count, percent };
         });
 
+        // Additional stats for AdminCategories/Brands
+        const unclassifiedProductCount = await Product.countDocuments({ category_id: { $exists: false } });
+        const visibleProductCount = await Product.countDocuments({ is_visible: true });
+        const Category = require('../models/category.model');
+        const categoryCount = await Category.countDocuments({});
+
         res.json({
             revenueToday,
             ordersToday,
@@ -302,7 +342,11 @@ const getDashboardStats = async (req, res) => {
             lowStockThreshold,
             activeCustomers,
             monthlyRevenue,
-            productDistribution
+            productDistribution,
+            totalProducts,
+            unclassifiedProductCount,
+            visibleProductCount,
+            categoryCount
         });
     } catch (error) {
         console.error(error);
@@ -334,13 +378,16 @@ const updatePaymentStatus = async (req, res) => {
         }
 
         const oldPaymentStatus = order.payment_status;
-        order.payment_status = payment_status;
-        const updatedOrder = await order.save();
+        const updatedOrder = await Order.findByIdAndUpdate(
+            req.params.id,
+            { $set: { payment_status: payment_status } },
+            { returnDocument: 'after', runValidators: false }
+        );
 
         // Log the change
         await OrderStatusHistory.create({
             order_id: order._id,
-            changed_by: req.user.id,
+            changed_by: req.user?._id || req.user?.id,
             status_type: 'payment',
             old_value: oldPaymentStatus,
             new_value: payment_status,
@@ -373,17 +420,25 @@ const cancelOrder = async (req, res) => {
             return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng đang ở trạng thái chờ xử lý' });
         }
 
+        // Restore stock when cancelled
+        const orderItems = await OrderItem.find({ order_id: order._id });
+        for (const item of orderItems) {
+            await Product.findByIdAndUpdate(item.product_id, {
+                $inc: { stock: item.quantity }
+            });
+        }
+
         const oldStatus = order.status;
         const updatedOrder = await Order.findByIdAndUpdate(
             order._id, 
             { $set: { status: 'cancelled' } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         // Log the change
         await OrderStatusHistory.create({
             order_id: order._id,
-            changed_by: req.user.id,
+            changed_by: req.user?._id || req.user?.id,
             status_type: 'order',
             old_value: oldStatus,
             new_value: 'cancelled',

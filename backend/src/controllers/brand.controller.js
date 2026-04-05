@@ -79,13 +79,22 @@ const deleteBrand = async (req, res) => {
     try {
         const brand = await Brand.findById(req.params.id);
 
-        if (brand) {
-            await Brand.deleteOne({ _id: req.params.id });
-            res.json({ message: 'Đã xoá thương hiệu' });
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy thương hiệu' });
+        if (!brand) {
+            return res.status(404).json({ message: 'Không tìm thấy thương hiệu' });
         }
+
+        // Integrity constraint: Check for associated products
+        const productCount = await Product.countDocuments({ brand_id: req.params.id });
+        if (productCount > 0) {
+            return res.status(400).json({ 
+                message: `Không thể xoá thương hiệu này vì đang có ${productCount} sản phẩm trực thuộc. Vui lòng xoá hoặc chuyển sản phẩm sang thương hiệu khác trước.` 
+            });
+        }
+
+        await Brand.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Đã xoá thương hiệu thành công' });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };

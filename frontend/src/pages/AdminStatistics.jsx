@@ -1,18 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { Link } from 'react-router-dom';
+import { getImageURL } from '../utils/imageUtils';
 
 const AdminStatistics = () => {
     const [wishlistStats, setWishlistStats] = useState([]);
+    const [dashboardStats, setDashboardStats] = useState(null);
+    const [latestOrders, setLatestOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await api.get('/admin/stats/wishlist');
-                if (res.data.success) {
-                    setWishlistStats(res.data.data);
+                // Fetch wishlist stats
+                const resWishlist = await api.get('/admin/stats/wishlist');
+                if (resWishlist.data.success) {
+                    setWishlistStats(resWishlist.data.data);
                 }
+                
+                // Fetch general dashboard stats
+                const resDashboard = await api.get('/orders/dashboard');
+                setDashboardStats(resDashboard.data);
+
+                // Fetch latest orders
+                const resOrders = await api.get('/orders/all');
+                setLatestOrders(resOrders.data.slice(0, 5)); // Just take top 5
             } catch (err) {
                 console.error('Fetch Stats Error:', err);
             } finally {
@@ -21,22 +36,63 @@ const AdminStatistics = () => {
         };
         fetchStats();
     }, []);
+
+
+    const handleExport = (type = 'txt') => {
+        if (!wishlistStats.length) return;
+        const timestamp = new Date().toLocaleString('vi-VN');
+        const filename = `Thong_ke_LuminaMobile_${new Date().getTime()}`;
+
+        if (type === 'pdf') {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('BÁO CÁO THỐNG KÊ CHI TIẾT', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Ngày xuất: ${timestamp}`, 105, 22, { align: 'center' });
+
+            const data = wishlistStats.map((item, idx) => [
+                idx + 1,
+                item.name,
+                item.product_id,
+                `${item.price.toLocaleString()}đ`,
+                `${item.count} lượt`
+            ]);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['STT', 'Tên sản phẩm', 'Mã sản phẩm', 'Giá', 'Yêu thích']],
+                body: data,
+                headStyles: { fillColor: [0, 62, 199] }
+            });
+
+            doc.save(`${filename}.pdf`);
+            return;
+        }
+
+        let content = `BÁO CÁO THỐNG KÊ CHI TIẾT - ${timestamp}\n`;
+        content += `===========================================\n\n`;
+        content += `TOP SẢN PHẨM ĐƯỢC YÊU THÍCH (WISHLIST):\n`;
+        content += `-------------------------------------------\n`;
+        wishlistStats.forEach((item, idx) => {
+            content += `${idx + 1}. ${item.name}\n`;
+            content += `   Mã SP: ${item.product_id}\n`;
+            content += `   Giá: ${item.price.toLocaleString()} VNĐ\n`;
+            content += `   Lượt thích: ${item.count}\n`;
+            content += `-------------------------------------------\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.txt`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
     return (
         <AdminLayout
             title="Thống kê & Phân tích"
             subtitle="Báo cáo hệ thống và hiệu suất tổng quan."
-            actions={(
-                <>
-                    <button className="bg-surface-container-high px-4 py-2 rounded-xl text-sm font-semibold text-on-surface hover:bg-surface-container-highest transition-colors flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">calendar_today</span>
-                        30 ngày qua
-                    </button>
-                    <button className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">download</span>
-                        Xuất báo cáo
-                    </button>
-                </>
-            )}
         >
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
@@ -47,9 +103,9 @@ const AdminStatistics = () => {
                         </div>
                         <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12.5%</span>
                     </div>
-                    <p className="text-secondary text-sm font-medium mb-1">Lợi nhuận ròng</p>
-                    <h3 className="text-2xl font-bold text-on-surface">2.450.000.000đ</h3>
-                    <p className="text-[10px] text-outline mt-3 uppercase tracking-wider">Dự báo: Tăng trưởng ổn định</p>
+                    <p className="text-secondary text-sm font-medium mb-1">Doanh thu hôm nay</p>
+                    <h3 className="text-2xl font-bold text-on-surface">{(dashboardStats?.revenueToday || 0).toLocaleString()}đ</h3>
+                    <p className="text-[10px] text-outline mt-3 uppercase tracking-wider">Lợi nhuận gộp từ đơn hàng</p>
                 </div>
                 
                 <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm">
@@ -59,8 +115,8 @@ const AdminStatistics = () => {
                         </div>
                         <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+4.2%</span>
                     </div>
-                    <p className="text-secondary text-sm font-medium mb-1">Tỷ lệ chuyển đổi</p>
-                    <h3 className="text-2xl font-bold text-on-surface">3.85%</h3>
+                    <p className="text-secondary text-sm font-medium mb-1">Khách hàng hoạt động</p>
+                    <h3 className="text-2xl font-bold text-on-surface">{(dashboardStats?.activeCustomers || 0).toLocaleString()}</h3>
                     <div className="w-full bg-surface-container mt-4 h-1 rounded-full overflow-hidden">
                         <div className="bg-primary h-full w-[65%]"></div>
                     </div>
@@ -73,9 +129,9 @@ const AdminStatistics = () => {
                         </div>
                         <span className="text-xs font-bold text-error bg-error-container/20 px-2 py-1 rounded-full">-1.2%</span>
                     </div>
-                    <p className="text-secondary text-sm font-medium mb-1">Giá trị đơn hàng TB</p>
-                    <h3 className="text-2xl font-bold text-on-surface">18.500.000đ</h3>
-                    <p className="text-[10px] text-outline mt-3 uppercase tracking-wider">Dựa trên 1,240 giao dịch</p>
+                    <p className="text-secondary text-sm font-medium mb-1">Tổng số đơn hàng</p>
+                    <h3 className="text-2xl font-bold text-on-surface">{(dashboardStats?.totalOrders || 0).toLocaleString()}</h3>
+                    <p className="text-[10px] text-outline mt-3 uppercase tracking-wider">Hệ thống ghi nhận</p>
                 </div>
             </div>
 
@@ -98,7 +154,7 @@ const AdminStatistics = () => {
                         </div>
                     </div>
                     
-                    {/* Mock Chart Visualization */}
+                    {/* Real Chart Visualization from Database */}
                     <div className="relative w-full flex-grow flex items-end justify-between px-2 pt-4">
                         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-4">
                             <div className="border-t border-surface-container-high w-full h-0"></div>
@@ -108,35 +164,45 @@ const AdminStatistics = () => {
                             <div className="border-t border-surface-container-high w-full h-0"></div>
                         </div>
                         
-                        <div className="group relative flex flex-col justify-end w-12 sm:w-16 h-full pb-8">
-                            <div className="bg-primary/10 w-full h-[60%] rounded-t-lg absolute bottom-8"></div>
-                            <div className="bg-primary w-full h-[45%] rounded-t-lg relative z-10 hover:opacity-80 transition-opacity"></div>
-                            <span className="text-[10px] sm:text-xs text-outline text-center mt-2 absolute bottom-0 w-full">Tuần 1</span>
-                        </div>
-                        <div className="group relative flex flex-col justify-end w-12 sm:w-16 h-full pb-8">
-                            <div className="bg-primary/10 w-full h-[75%] rounded-t-lg absolute bottom-8"></div>
-                            <div className="bg-primary w-full h-[65%] rounded-t-lg relative z-10 hover:opacity-80 transition-opacity"></div>
-                            <span className="text-[10px] sm:text-xs text-outline text-center mt-2 absolute bottom-0 w-full">Tuần 2</span>
-                        </div>
-                        <div className="group relative flex flex-col justify-end w-12 sm:w-16 h-full pb-8">
-                            <div className="bg-primary/10 w-full h-[85%] rounded-t-lg absolute bottom-8"></div>
-                            <div className="bg-primary w-full h-[95%] rounded-t-lg relative z-10 hover:opacity-80 transition-opacity shadow-lg shadow-primary/30"></div>
-                            <span className="text-[10px] sm:text-xs text-outline text-center mt-2 absolute bottom-0 w-full">Tuần 3</span>
-                        </div>
-                        <div className="group relative flex flex-col justify-end w-12 sm:w-16 h-full pb-8">
-                            <div className="bg-primary/10 w-full h-[70%] rounded-t-lg absolute bottom-8"></div>
-                            <div className="bg-primary w-full h-[55%] rounded-t-lg relative z-10 hover:opacity-80 transition-opacity"></div>
-                            <span className="text-[10px] sm:text-xs text-outline text-center mt-2 absolute bottom-0 w-full">Tuần 4</span>
-                        </div>
+                        {dashboardStats?.monthlyRevenue?.length > 0 ? (
+                            dashboardStats.monthlyRevenue.map((item, idx) => {
+                                const maxVal = Math.max(...dashboardStats.monthlyRevenue.map(m => m.total), 1);
+                                const heightPercent = Math.max((item.total / maxVal) * 90, 5); // at least 5% height
+                                return (
+                                    <div key={idx} className="group relative flex flex-col justify-end w-12 sm:w-16 h-full pb-8">
+                                        <div className="bg-primary/10 w-full h-[80%] rounded-t-lg absolute bottom-8 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div 
+                                            className="bg-primary w-full rounded-t-lg relative z-10 hover:opacity-80 transition-all duration-700 shadow-lg shadow-primary/10"
+                                            style={{ height: `${heightPercent}%` }}
+                                        >
+                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                                {item.total.toLocaleString()}đ
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] sm:text-xs text-outline text-center mt-2 absolute bottom-0 w-full font-bold">Tháng {item.month}</span>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-secondary text-sm italic">
+                                Chưa có dữ liệu doanh thu tháng
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Top Wishlist Products */}
                 <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10 h-[450px] flex flex-col">
-                    <div className="w-full">
-                        <h4 className="text-lg font-bold mb-1">Sản phẩm được yêu thích</h4>
-                        <p className="text-xs text-secondary mb-8">Top sản phẩm trong danh sách ước (Wishlist)</p>
-                    </div>
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h4 className="text-lg font-bold mb-1">Top yêu thích</h4>
+                                <p className="text-xs text-secondary">Sản phẩm trong danh sách Wishlist</p>
+                            </div>
+                            <Link to="/admin/statistics/wishlist" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline group">
+                                Xem tất cả
+                                <span className="material-symbols-outlined text-[14px] group-hover:translate-x-1 transition-transform">chevron_right</span>
+                            </Link>
+                        </div>
                     
                     <div className="flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar">
                         {loading ? (
@@ -149,7 +215,7 @@ const AdminStatistics = () => {
                                     <div className="flex items-center gap-4">
                                         <div className="relative">
                                             <img 
-                                                src={item.images && item.images[0]} 
+                                                src={item.images && item.images[0] ? getImageURL(item.images[0]) : ''} 
                                                 alt={item.name}
                                                 className="w-12 h-12 object-cover rounded-lg shadow-sm"
                                             />
@@ -177,9 +243,14 @@ const AdminStatistics = () => {
                 </div>
             </div>
 
-            {/* Latest Sales Feature */}
             <section className="mt-12 text-left">
-                <h4 className="text-sm font-bold uppercase tracking-widest text-outline mb-6">Giao dịch gần đây</h4>
+                <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-outline">Giao dịch gần đây</h4>
+                    <Link to="/admin/orders" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline group">
+                        Xem đơn hàng
+                        <span className="material-symbols-outlined text-[14px] group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </Link>
+                </div>
                 <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[700px]">
@@ -193,48 +264,49 @@ const AdminStatistics = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-surface-container">
-                                <tr className="hover:bg-surface-container-low/50 transition-colors">
-                                    <td className="px-6 py-4 text-sm font-bold text-primary">#VOLT-8921</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-on-primary-fixed">NT</div>
-                                            <span className="text-sm font-medium">Nguyễn Thành Trung</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-on-surface">iPhone 15 Pro Max 256GB</td>
-                                    <td className="px-6 py-4 text-sm font-bold">32.490.000đ</td>
-                                    <td className="px-6 py-4">
-                                        <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Hoàn tất</span>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-surface-container-low/50 transition-colors">
-                                    <td className="px-6 py-4 text-sm font-bold text-primary">#VOLT-8920</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-tertiary-fixed flex items-center justify-center text-[10px] font-bold text-on-tertiary-fixed">HL</div>
-                                            <span className="text-sm font-medium">Hoàng Lan Anh</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-on-surface">Samsung Galaxy S24 Ultra</td>
-                                    <td className="px-6 py-4 text-sm font-bold">29.990.000đ</td>
-                                    <td className="px-6 py-4">
-                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Đang giao</span>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-surface-container-low/50 transition-colors">
-                                    <td className="px-6 py-4 text-sm font-bold text-primary">#VOLT-8919</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-secondary-fixed flex items-center justify-center text-[10px] font-bold text-on-secondary-fixed">PV</div>
-                                            <span className="text-sm font-medium">Phạm Văn Nam</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-on-surface">Sony WH-1000XM5</td>
-                                    <td className="px-6 py-4 text-sm font-bold">8.490.000đ</td>
-                                    <td className="px-6 py-4">
-                                        <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Chờ xử lý</span>
-                                    </td>
-                                </tr>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-4 text-center text-sm text-secondary">Đang tải dữ liệu...</td>
+                                    </tr>
+                                ) : latestOrders.length > 0 ? (
+                                    latestOrders.map((order) => (
+                                        <tr key={order._id} className="hover:bg-surface-container-low/50 transition-colors">
+                                            <td className="px-6 py-4 text-sm font-bold text-primary">#{order._id.slice(-6).toUpperCase()}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-on-primary-fixed overflow-hidden">
+                                                        {order.user_id?.avatar ? (
+                                                            <img src={getImageURL(order.user_id.avatar)} className="w-full h-full object-cover" alt={order.user_id.name} />
+                                                        ) : (
+                                                            (order.user_id?.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm font-medium">{order.user_id?.name || 'Khách vãng lai'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-on-surface">
+                                                Đơn hàng {order._id.slice(-4)}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-bold">{(order.total_price || 0).toLocaleString()}đ</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                                    order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                                    order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                                                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                    'bg-blue-100 text-blue-700'
+                                                }`}>
+                                                    {order.status === 'pending' ? 'Chờ xử lý' :
+                                                     order.status === 'delivered' ? 'Hoàn tất' :
+                                                     order.status === 'cancelled' ? 'Đã hủy' : 'Đang giao'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-4 text-center text-sm text-secondary">Chưa có giao dịch nào.</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

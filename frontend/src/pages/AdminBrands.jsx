@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getImageURL } from '../utils/imageUtils';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState([]);
@@ -19,6 +22,7 @@ const AdminBrands = () => {
     useEffect(() => {
         api.get('/brands').then(res => setBrands(res.data)).catch(console.error);
     }, []);
+
 
     const pageCount = Math.ceil(brands.length / pageSize);
     const safePageCount = pageCount === 0 ? 1 : pageCount;
@@ -115,6 +119,11 @@ const AdminBrands = () => {
 
     const handleUploadLogo = async (file) => {
         if (!file || isUploadingLogo) return;
+        
+        // Show local preview immediately
+        const localPreviewUrl = URL.createObjectURL(file);
+        setFormLogo(localPreviewUrl);
+
         const formData = new FormData();
         formData.append('files', file);
         try {
@@ -128,11 +137,14 @@ const AdminBrands = () => {
                 setNotice({ type: 'success', text: 'Upload logo thành công' });
             } else {
                 setNotice({ type: 'error', text: 'Upload logo thất bại' });
+                setFormLogo(''); // Reset if failed
             }
         } catch (err) {
             setNotice({ type: 'error', text: err.response?.data?.message || 'Upload logo thất bại' });
+            setFormLogo(''); // Reset if failed
         } finally {
             setIsUploadingLogo(false);
+            URL.revokeObjectURL(localPreviewUrl);
         }
     };
 
@@ -163,9 +175,59 @@ const AdminBrands = () => {
         }
     };
 
+    const handleExportBrands = (type = 'txt') => {
+        if (!brands.length) return;
+        const timestamp = new Date().toLocaleString('vi-VN');
+        const filename = `Danh_sach_thuong_hieu_${new Date().getTime()}`;
+
+        if (type === 'pdf') {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('BÁO CÁO DANH SÁCH THƯƠNG HIỆU', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Ngày xuất: ${timestamp}`, 105, 22, { align: 'center' });
+
+            const data = brands.map((b, i) => [
+                i + 1,
+                b.name,
+                b.product_count || 0,
+                b.product_count > 0 ? 'Đang kinh doanh' : 'Chưa có sản phẩm'
+            ]);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['STT', 'Tên thương hiệu', 'Số sản phẩm', 'Trạng thái']],
+                body: data,
+                headStyles: { fillColor: [0, 62, 199] }
+            });
+
+            doc.save(`${filename}.pdf`);
+            return;
+        }
+
+        let content = `BÁO CÁO THƯƠNG HIỆU - ${timestamp}\n`;
+        content += `-------------------------------------------\n`;
+        content += `Tổng số thương hiệu: ${brands.length}\n`;
+        content += `Tổng số sản phẩm: ${totalProductCount}\n\n`;
+        
+        content += `CHI TIẾT THƯƠNG HIỆU:\n`;
+        brands.forEach((b, i) => {
+            content += `${i+1}. Tên: ${b.name} | Số sản phẩm: ${b.product_count || 0}\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.txt`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <AdminLayout
             title="Quản lý Thương hiệu"
+            subtitle="Tùy chỉnh các đối tác và biểu tượng thương hiệu trên hệ thống"
             actions={
                 <button onClick={openCreate} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-semibold shadow-lg shadow-primary/20 active:scale-95 transition-all">
                     <span className="material-symbols-outlined">add_circle</span>
@@ -216,12 +278,20 @@ const AdminBrands = () => {
                     <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
                         <div className="p-6 border-b border-surface-container flex justify-between items-center bg-white">
                             <h3 className="font-bold text-lg">Danh sách thương hiệu</h3>
-                            <div className="flex gap-2">
-                                <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span className="material-symbols-outlined">filter_list</span>
+                            <div className="flex gap-1">
+                                <button 
+                                    onClick={() => handleExportBrands('txt')}
+                                    className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    title="Xuất file TEXT"
+                                >
+                                    <span className="material-symbols-outlined">description</span>
                                 </button>
-                                <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span className="material-symbols-outlined">download</span>
+                                <button 
+                                    onClick={() => handleExportBrands('pdf')}
+                                    className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    title="Xuất file PDF"
+                                >
+                                    <span className="material-symbols-outlined">picture_as_pdf</span>
                                 </button>
                             </div>
                         </div>
@@ -241,7 +311,7 @@ const AdminBrands = () => {
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center p-2 group-hover:scale-105 transition-transform text-2xl font-bold font-serif overflow-hidden">
-                                                        {brand.logo ? <img src={brand.logo} className="object-contain w-full h-full" alt={brand.name} /> : brand.name.charAt(0)}
+                                                        {brand.logo ? <img src={getImageURL(brand.logo)} className="object-contain w-full h-full" alt={brand.name} /> : brand.name.charAt(0)}
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-on-surface">{brand.name}</p>
@@ -359,7 +429,7 @@ const AdminBrands = () => {
                                         />
                                         {formLogo && (
                                             <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
-                                                <img src={formLogo} alt="Logo preview" className="w-full h-full object-contain" />
+                                                <img src={getImageURL(formLogo)} alt="Logo preview" className="w-full h-full object-contain" />
                                             </div>
                                         )}
                                     </div>

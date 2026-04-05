@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { getImageURL } from '../utils/imageUtils';
 
 const BrandList = () => {
     const [brands, setBrands] = useState([]);
@@ -30,7 +31,7 @@ const BrandList = () => {
                 <div className="grid-cards">
                     {brands.map((brand) => (
                         <article className="brand-card" key={brand._id}>
-                            {brand.logo && <img className="brand-logo" src={brand.logo} alt={brand.name} />}
+                            {brand.logo && <img className="brand-logo" src={getImageURL(brand.logo)} alt={brand.name} />}
                             <h3>{brand.name}</h3>
                             <p>Thương hiệu đang có trong hệ thống demo.</p>
                         </article>

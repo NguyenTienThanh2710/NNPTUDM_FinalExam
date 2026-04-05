@@ -33,6 +33,14 @@ const AdminProducts = () => {
         api.get('/categories').then(res => setCategories(res.data)).catch(console.error);
     }, []);
 
+    const getImageURL = (img) => {
+        if (!img) return null;
+        if (img.startsWith('http')) return img;
+        const path = img.startsWith('/') ? img : `/${img}`;
+        if (path.startsWith('/uploads/')) return `http://localhost:5000${path}`;
+        return `http://localhost:5000/uploads${path}`;
+    };
+
     useEffect(() => {
         const shouldOpen = searchParams.get('create') === '1';
         if (shouldOpen) {
@@ -326,7 +334,7 @@ const AdminProducts = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
                                                 <div className={`w-14 h-14 rounded-lg bg-surface-container-low p-2 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-primary-fixed bg-primary ${product.stock <= 0 ? 'opacity-50 grayscale' : ''}`}>
-                                                    {product.images && product.images[0] ? <img src={product.images[0]} className="object-cover w-full h-full rounded" /> : product.name.charAt(0)}
+                                                    {product.images && product.images[0] ? <img src={getImageURL(product.images[0])} className="object-cover w-full h-full rounded" /> : product.name.charAt(0)}
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{product.name}</p>
