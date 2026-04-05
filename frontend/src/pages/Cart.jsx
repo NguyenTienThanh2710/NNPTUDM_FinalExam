@@ -46,9 +46,12 @@ const Cart = () => {
         try {
             const res = await api.get('/auth/profile');
 
-            // ✅ AUTO FILL ĐỊA CHỈ
+            // ✅ AUTO FILL ĐỊA CHỈ & SĐT
             if (res.data.address) {
                 setShippingAddress(res.data.address);
+            }
+            if (res.data.phone) {
+                setPhoneNumber(res.data.phone);
             }
         } catch (err) {
             console.error('Lỗi lấy profile:', err);
