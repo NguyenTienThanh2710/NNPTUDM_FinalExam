@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const navItems = [
   { to: '/', label: 'Trang chủ', end: true },
@@ -10,7 +11,24 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [productIndex, setProductIndex] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchRef = useRef(null);
+  const searchDebounceRef = useRef(null);
+
+  const normalizeText = (value) => {
+    return String(value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+
+  const queryText = useMemo(() => normalizeText(searchText), [searchText]);
 
   useEffect(() => {
     // Check for user login status on mount and when localStorage changes
@@ -41,6 +59,98 @@ export default function Header() {
     const timeoutId = window.setTimeout(() => setNotice(null), 3000);
     return () => window.clearTimeout(timeoutId);
   }, [notice]);
+
+  useEffect(() => {
+    const fetchIndex = async () => {
+      setSearchLoading(true);
+      try {
+        const res = await api.get('/products');
+        const list = Array.isArray(res.data) ? res.data : [];
+        setProductIndex(
+          list.map((p) => ({
+            _id: p._id,
+            name: p.name,
+            price: p.price,
+            image: Array.isArray(p.images) ? p.images[0] : undefined,
+            brandName: typeof p.brand_id === 'string' ? '' : p.brand_id?.name,
+            categoryName: typeof p.category_id === 'string' ? '' : p.category_id?.name
+          }))
+        );
+      } catch (_err) {
+        setProductIndex([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    fetchIndex();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!searchRef.current) return;
+      if (searchRef.current.contains(e.target)) return;
+      setSearchOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/products')) return;
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') || '';
+    setSearchText(q);
+  }, [location.pathname, location.search]);
+
+  const suggestions = useMemo(() => {
+    if (!queryText) return [];
+    const items = productIndex
+      .map((p) => {
+        const name = normalizeText(p.name);
+        const brandName = normalizeText(p.brandName);
+        const categoryName = normalizeText(p.categoryName);
+        const score =
+          (name.includes(queryText) ? 3 : 0) +
+          (brandName.includes(queryText) ? 2 : 0) +
+          (categoryName.includes(queryText) ? 1 : 0);
+        return { ...p, score };
+      })
+      .filter((p) => p.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    return items.slice(0, 6);
+  }, [productIndex, queryText]);
+
+  const goSearch = (q) => {
+    const trimmed = String(q || '').trim();
+    if (!trimmed) {
+      navigate('/products');
+      setSearchOpen(false);
+      return;
+    }
+    navigate(`/products?q=${encodeURIComponent(trimmed)}`);
+    setSearchOpen(false);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      goSearch(searchText);
+    }
+    if (e.key === 'Escape') {
+      setSearchOpen(false);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchText(value);
+    setSearchOpen(true);
+    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = window.setTimeout(() => {
+      setSearchOpen(true);
+    }, 120);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -126,9 +236,82 @@ export default function Header() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative hidden sm:block">
+          <div ref={searchRef} className="relative hidden sm:block">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-            <input className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Tìm kiếm sản phẩm..." type="text" />
+            <input
+              className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64"
+              placeholder="Tìm kiếm sản phẩm..."
+              type="text"
+              value={searchText}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={handleSearchKeyDown}
+            />
+
+            {searchOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-2xl shadow-2xl overflow-hidden z-[80]">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => goSearch(searchText)}
+                  className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-lg">search</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-on-surface truncate">
+                      {searchText.trim() ? `Tìm “${searchText.trim()}”` : 'Nhập từ khoá để tìm kiếm'}
+                    </div>
+                    <div className="text-xs text-on-surface-variant truncate">
+                      {searchText.trim() ? 'Xem tất cả kết quả trong cửa hàng' : 'Gợi ý theo tên sản phẩm, thương hiệu, danh mục'}
+                    </div>
+                  </div>
+                </button>
+
+                <div className="border-t border-outline-variant/10" />
+
+                {searchLoading && (
+                  <div className="px-4 py-4 text-sm text-on-surface-variant">Đang tải gợi ý...</div>
+                )}
+
+                {!searchLoading && queryText && suggestions.length === 0 && (
+                  <div className="px-4 py-4 text-sm text-on-surface-variant">Không tìm thấy gợi ý phù hợp</div>
+                )}
+
+                {!searchLoading && suggestions.length > 0 && (
+                  <div className="max-h-[360px] overflow-auto">
+                    {suggestions.map((p) => (
+                      <button
+                        key={p._id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          navigate(`/products/${p._id}`);
+                          setSearchOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3"
+                      >
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover border border-outline-variant/20" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center border border-outline-variant/20">
+                            <span className="material-symbols-outlined text-slate-500">image</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-black text-on-surface truncate">{p.name}</div>
+                          <div className="text-xs text-on-surface-variant truncate">
+                            {(p.brandName || 'N/A')}{p.categoryName ? ` • ${p.categoryName}` : ''}
+                          </div>
+                        </div>
+                        <div className="text-sm font-black text-on-surface whitespace-nowrap">
+                          {(p.price || 0).toLocaleString('vi-VN')} ₫
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           {user && (
             <Link to="/orders" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95" title="Lịch sử đơn hàng">

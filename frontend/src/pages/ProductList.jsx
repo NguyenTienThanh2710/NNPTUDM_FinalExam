@@ -124,7 +124,25 @@ const ProductList = () => {
         }
     };
 
+    const normalizeText = (value) => {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    };
+
+    const queryText = normalizeText(searchParams.get('q'));
+
     const filteredProducts = products.filter((p) => {
+        if (queryText) {
+            const name = normalizeText(p.name);
+            const brandName = normalizeText(typeof p.brand_id === 'string' ? '' : p.brand_id?.name);
+            const categoryName = normalizeText(typeof p.category_id === 'string' ? '' : p.category_id?.name);
+            const isMatch = name.includes(queryText) || brandName.includes(queryText) || categoryName.includes(queryText);
+            if (!isMatch) return false;
+        }
+
         const brandId = typeof p.brand_id === 'string' ? p.brand_id : p.brand_id?._id;
         const isBrandMatch = selectedBrandIds.length === 0 || (brandId && selectedBrandIds.includes(brandId));
 
@@ -217,6 +235,11 @@ const ProductList = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
                         <div>
                             <h1 className="text-3xl font-black tracking-tight text-on-surface">Danh Sách Sản Phẩm</h1>
+                            {queryText && (
+                                <p className="mt-2 text-sm text-on-surface-variant">
+                                    Kết quả tìm kiếm cho: <span className="font-bold text-on-surface">{searchParams.get('q')}</span>
+                                </p>
+                            )}
                         </div>
                         <div className="flex items-center gap-3 bg-surface-container-low p-1.5 rounded-full">
                             <span className="text-xs font-bold text-outline uppercase ml-4 mr-2">Sắp xếp:</span>

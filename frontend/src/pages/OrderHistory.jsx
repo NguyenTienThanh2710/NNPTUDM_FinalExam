@@ -67,6 +67,27 @@ const OrderHistory = () => {
         </div>
     );
 
+    if (error) {
+        return (
+            <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
+                <div className="bg-error-container text-on-error-container rounded-xl p-6 border border-outline-variant/10">
+                    <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined">error</span>
+                        <div className="font-bold">{error}</div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => window.location.reload()}
+                        className="mt-4 inline-flex items-center gap-2 bg-white/60 text-on-surface px-4 py-2 rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all"
+                    >
+                        <span className="material-symbols-outlined text-lg">refresh</span>
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <main className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen text-left">
             {/* Header Section */}
