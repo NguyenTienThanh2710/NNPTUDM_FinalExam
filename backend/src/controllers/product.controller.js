@@ -118,7 +118,7 @@ const deleteProduct = async (req, res) => {
         const product = await Product.findById(req.params.id);
 
         if (product) {
-            await product.remove();
+            await Product.deleteOne({ _id: req.params.id });
             res.json({ message: 'Đã xoá sản phẩm' });
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });

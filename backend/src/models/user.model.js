@@ -26,6 +26,9 @@ const UserSchema = new Schema({
     phone: {
         type: String
     },
+    address: {
+        type: String
+    },
     status: {
         type: String,
         enum: ['active', 'locked'],

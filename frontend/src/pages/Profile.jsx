@@ -14,6 +14,7 @@ const Profile = () => {
         return {
             name: parsed?.name || '',
             phone: parsed?.phone || '',
+            address: parsed?.address || '',
             avatar: parsed?.avatar || ''
         };
     });
@@ -27,6 +28,7 @@ const Profile = () => {
                 setFormData({
                     name: res.data.name,
                     phone: res.data.phone || '',
+                    address: res.data.address || '',
                     avatar: res.data.avatar || ''
                 });
                 setLoading(false);
@@ -151,6 +153,24 @@ const Profile = () => {
                                 className={`w-full px-6 py-4 rounded-2xl border-none transition-all ${isEditing ? 'bg-surface-container focus:ring-2 focus:ring-primary' : 'bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed'}`}
                             />
                         </div>
+                        <div className="space-y-2">
+    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">
+        Địa chỉ
+    </label>
+    <input 
+        type="text"
+        name="address"
+        placeholder="Chưa cập nhật"
+        value={isEditing ? formData.address : (user.address || '')}
+        onChange={handleChange}
+        readOnly={!isEditing}
+        className={`w-full px-6 py-4 rounded-2xl border-none transition-all ${
+            isEditing 
+                ? 'bg-surface-container focus:ring-2 focus:ring-primary' 
+                : 'bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed'
+        }`}
+    />
+</div>
                         <div className="space-y-2">
                             <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Avatar URL (Link ảnh)</label>
                             <input 

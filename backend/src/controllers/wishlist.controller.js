@@ -96,3 +96,50 @@ exports.checkInWishlist = async (req, res) => {
         });
     }
 };
+// @desc    Get top wishlisted products for admin
+// @route   GET /api/wishlist/stats
+// @access  Private/Admin
+exports.getWishlistStats = async (req, res) => {
+    try {
+        const stats = await Wishlist.aggregate([
+            {
+                $group: {
+                    _id: '$product_id',
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'product'
+                }
+            },
+            { $unwind: '$product' },
+            {
+                $project: {
+                    _id: 0,
+                    product_id: '$_id',
+                    count: 1,
+                    name: '$product.name',
+                    images: '$product.images',
+                    price: '$product.price'
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: stats
+        });
+    } catch (err) {
+        console.error('Wishlist Stats Error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};

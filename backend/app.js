@@ -15,6 +15,8 @@ const productRoutes = require('./src/routes/product.route');
 const cartRoutes = require('./src/routes/cart.route');
 const orderRoutes = require('./src/routes/order.route');
 const wishlistRoutes = require('./src/routes/wishlist.route');
+const adminRoutes = require('./src/routes/admin.route');
+const reviewRoutes = require('./src/routes/review.route');
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -41,14 +45,23 @@ const start = async () => {
         let mongoUri = process.env.MONGO_URI;
 
         if (!mongoUri) {
-            const dbName = process.env.MONGO_DB_NAME || 'nnptudm_finalexam';
-            const port = Number(process.env.MONGO_PORT || 27017);
+            const dbName = process.env.MONGO_DB_NAME || 'shop-database';
+            let port = Number(process.env.MONGO_PORT || 27017);
 
-            memoryServer = await MongoMemoryServer.create({
-                instance: { port, dbName }
-            });
+            try {
+                memoryServer = await MongoMemoryServer.create({
+                    instance: { port, dbName }
+                });
+            } catch (error) {
+                console.log(`Failed to start on port ${port}, trying a random port...`);
+                // If it fails on the specific port, try letting it pick a random one
+                memoryServer = await MongoMemoryServer.create({
+                    instance: { dbName }
+                });
+            }
 
-            mongoUri = `mongodb://127.0.0.1:${port}/${dbName}`;
+            mongoUri = memoryServer.getUri();
+            console.log(`Memory MongoDB started at: ${mongoUri}`);
         }
 
         await mongoose.connect(mongoUri);

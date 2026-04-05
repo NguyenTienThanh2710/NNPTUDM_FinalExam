@@ -60,6 +60,8 @@ const AdminOrders = () => {
     const [detailOrderId, setDetailOrderId] = useState(null);
     const [statusDraft, setStatusDraft] = useState('pending');
     const [statusSaving, setStatusSaving] = useState(false);
+    const [paymentStatusDraft, setPaymentStatusDraft] = useState('pending');
+    const [paymentStatusSaving, setPaymentStatusSaving] = useState(false);
     const [notice, setNotice] = useState(null);
     const pageSize = 10;
 
@@ -87,6 +89,7 @@ const AdminOrders = () => {
             const res = await api.get(`/orders/${orderId}`);
             setDetailData(res.data);
             setStatusDraft(res.data?.order?.status || 'pending');
+            setPaymentStatusDraft(res.data?.order?.payment_status || 'pending');
         } catch (_err) {
             const msg = _err?.response?.data?.message || _err?.response?.data?.msg || 'Không thể lấy chi tiết đơn hàng';
             setNotice({ type: 'error', text: msg });
@@ -103,6 +106,7 @@ const AdminOrders = () => {
         setDetailData(null);
         setDetailLoading(false);
         setStatusSaving(false);
+        setPaymentStatusSaving(false);
     };
 
     const saveStatus = async () => {
@@ -121,6 +125,25 @@ const AdminOrders = () => {
             setNotice({ type: 'error', text: msg });
         } finally {
             setStatusSaving(false);
+        }
+    };
+
+    const savePaymentStatus = async () => {
+        if (!detailOrderId) return;
+        if (!detailData?.order) return;
+        if (paymentStatusDraft === detailData.order.payment_status) return;
+        setPaymentStatusSaving(true);
+        try {
+            const res = await api.put(`/orders/${detailOrderId}/payment`, { payment_status: paymentStatusDraft });
+            const nextStatus = res.data?.payment_status;
+            setOrders((prev) => prev.map((o) => (o._id === detailOrderId ? { ...o, payment_status: nextStatus } : o)));
+            setDetailData((prev) => (prev ? { ...prev, order: { ...prev.order, payment_status: nextStatus } } : prev));
+            setNotice({ type: 'success', text: 'Cập nhật trạng thái thanh toán thành công' });
+        } catch (_err) {
+            const msg = _err?.response?.data?.message || _err?.response?.data?.msg || 'Không thể cập nhật trạng thái thanh toán';
+            setNotice({ type: 'error', text: msg });
+        } finally {
+            setPaymentStatusSaving(false);
         }
     };
 
@@ -427,13 +450,17 @@ const AdminOrders = () => {
                                                         {new Date(detailData.order.created_at).toLocaleString('vi-VN')}
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Tổng tiền</div>
-                                                    <div className="font-extrabold text-on-surface">{(detailData.order.total_price || 0).toLocaleString()} ₫</div>
+                                                <div className="md:col-span-2">
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Địa chỉ giao hàng</div>
+                                                    <div className="font-semibold text-on-surface">{detailData.order.shipping_address || 'Chưa cung cấp'}</div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Trạng thái hiện tại</div>
-                                                    <div className="font-semibold text-on-surface">{getStatusText(detailData.order.status)}</div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Phương thức thanh toán</div>
+                                                    <div className="font-semibold text-on-surface">{detailData.order.payment_method === 'COD' ? 'Tiền mặt (COD)' : 'Chuyển khoản'}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-secondary uppercase tracking-widest">Tổng tiền</div>
+                                                    <div className="font-extrabold text-primary">{(detailData.order.total_price || 0).toLocaleString()} ₫</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -442,7 +469,7 @@ const AdminOrders = () => {
                                             <div className="px-4 py-3 border-b border-slate-100 text-xs font-bold text-secondary uppercase tracking-widest">
                                                 Sản phẩm trong đơn
                                             </div>
-                                            <div className="max-h-[320px] overflow-auto">
+                                            <div className="max-h-[280px] overflow-auto">
                                                 <table className="w-full text-left border-collapse">
                                                     <thead className="bg-slate-50/50 sticky top-0">
                                                         <tr>
@@ -480,9 +507,10 @@ const AdminOrders = () => {
                                         </div>
                                     </div>
 
-                                    <div className="lg:col-span-1">
+                                    <div className="lg:col-span-1 space-y-4">
+                                        {/* Order Status Update */}
                                         <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
-                                            <div className="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Cập nhật trạng thái</div>
+                                            <div className="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Trạng thái đơn hàng</div>
                                             <div className="space-y-3">
                                                 <div className="relative">
                                                     <select
@@ -506,12 +534,37 @@ const AdminOrders = () => {
                                                     disabled={statusSaving || !detailData?.order || statusDraft === detailData.order.status}
                                                     className="w-full bg-primary text-on-primary px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    {statusSaving ? 'Đang cập nhật...' : 'Cập nhật'}
+                                                    {statusSaving ? 'Đang cập nhật...' : 'Lưu trạng thái đơn'}
                                                 </button>
+                                            </div>
+                                        </div>
 
-                                                <div className="text-xs text-secondary">
-                                                    Khi admin cập nhật trạng thái, user sẽ thấy trạng thái mới khi xem lịch sử/chi tiết đơn hàng.
+                                        {/* Payment Status Update */}
+                                        <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+                                            <div className="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Trạng thái thanh toán</div>
+                                            <div className="space-y-3">
+                                                <div className="relative">
+                                                    <select
+                                                        value={paymentStatusDraft}
+                                                        onChange={(e) => setPaymentStatusDraft(e.target.value)}
+                                                        className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 pr-10 text-sm font-semibold text-on-surface focus:ring-2 focus:ring-primary/20 shadow-sm cursor-pointer"
+                                                        disabled={paymentStatusSaving}
+                                                    >
+                                                        <option value="pending">Chờ thanh toán</option>
+                                                        <option value="paid">Đã thanh toán</option>
+                                                        <option value="failed">Thanh toán thất bại</option>
+                                                    </select>
+                                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-sm">expand_more</span>
                                                 </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={savePaymentStatus}
+                                                    disabled={paymentStatusSaving || !detailData?.order || paymentStatusDraft === detailData.order.payment_status}
+                                                    className="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {paymentStatusSaving ? 'Đang cập nhật...' : 'Lưu trạng thái tiền'}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

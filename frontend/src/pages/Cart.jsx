@@ -8,6 +8,8 @@ const Cart = () => {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState(null);
     const [removeConfirmItemId, setRemoveConfirmItemId] = useState(null);
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('COD');
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -38,6 +40,22 @@ const Cart = () => {
     useEffect(() => {
         fetchCart();
     }, []);
+    useEffect(() => {
+    const fetchUser = async () => {
+        try {
+            const res = await api.get('/auth/profile');
+
+            // ✅ AUTO FILL ĐỊA CHỈ
+            if (res.data.address) {
+                setShippingAddress(res.data.address);
+            }
+        } catch (err) {
+            console.error('Lỗi lấy profile:', err);
+        }
+    };
+
+    fetchUser();
+}, []);
 
     const handleUpdateQuantity = async (id, newQuantity) => {
         if (newQuantity < 1) return;
@@ -68,8 +86,16 @@ const Cart = () => {
 
     const handleCheckout = async (e) => {
         e?.preventDefault();
+        if (!shippingAddress) {
+            setNotice({ type: 'error', text: 'Vui lòng nhập địa chỉ giao hàng' });
+            return;
+        }
+
         try {
-            await api.post('/orders');
+            await api.post('/orders', {
+                shipping_address: shippingAddress,
+                payment_method: paymentMethod
+            });
             navigate('/orders', { state: { notice: { type: 'success', text: 'Đặt hàng thành công!' } } }); 
         } catch (err) {
             setNotice({ type: 'error', text: err.response?.data?.message || 'Đặt hàng thất bại' });
@@ -215,16 +241,39 @@ const Cart = () => {
                                         placeholder="Ví dụ: Số 1, đường 2, phường 3, quận 4, TP.HCM" 
                                         rows="3"
                                         required
+                                        value={shippingAddress}
+                                        onChange={(e) => setShippingAddress(e.target.value)}
                                     ></textarea>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-bold text-on-surface mb-4 tracking-widest uppercase">Phương Thức Thanh Toán</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <label className="cursor-pointer">
-                                            <input name="payment" type="radio" value="cod" className="hidden peer" defaultChecked />
-                                            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-surface-container peer-checked:border-primary peer-checked:bg-primary-fixed bg-surface-container-low transition-all">
+                                            <input 
+                                                name="payment" 
+                                                type="radio" 
+                                                value="COD" 
+                                                className="hidden peer" 
+                                                checked={paymentMethod === 'COD'}
+                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                            />
+                                            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-surface-container peer-checked:border-primary peer-checked:bg-primary-fixed bg-surface-container-low transition-all h-full">
                                                 <span className="material-symbols-outlined mb-2 text-primary">payments</span>
                                                 <span className="text-sm font-bold text-center">Tiền mặt (COD)</span>
+                                            </div>
+                                        </label>
+                                        <label className="cursor-pointer">
+                                            <input 
+                                                name="payment" 
+                                                type="radio" 
+                                                value="BANK_TRANSFER" 
+                                                className="hidden peer" 
+                                                checked={paymentMethod === 'BANK_TRANSFER'}
+                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                            />
+                                            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-surface-container peer-checked:border-primary peer-checked:bg-primary-fixed bg-surface-container-low transition-all h-full">
+                                                <span className="material-symbols-outlined mb-2 text-primary">account_balance</span>
+                                                <span className="text-sm font-bold text-center">Chuyển khoản</span>
                                             </div>
                                         </label>
                                     </div>

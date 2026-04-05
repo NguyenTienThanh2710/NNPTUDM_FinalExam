@@ -80,7 +80,7 @@ const deleteBrand = async (req, res) => {
         const brand = await Brand.findById(req.params.id);
 
         if (brand) {
-            await brand.remove();
+            await Brand.deleteOne({ _id: req.params.id });
             res.json({ message: 'Đã xoá thương hiệu' });
         } else {
             res.status(404).json({ message: 'Không tìm thấy thương hiệu' });

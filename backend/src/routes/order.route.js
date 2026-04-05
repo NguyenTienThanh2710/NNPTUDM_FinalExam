@@ -6,6 +6,7 @@ const {
     getAllOrders,
     getOrderById,
     updateOrderStatus,
+    updatePaymentStatus,
     getDashboardStats
 } = require('../controllers/order.controller');
 
@@ -28,5 +29,8 @@ router.route('/:id')
 
 router.route('/:id/status')
     .put(admin, updateOrderStatus);
+
+router.route('/:id/payment')
+    .put(admin, updatePaymentStatus);
 
 module.exports = router;
