@@ -17,20 +17,11 @@ const ProductDetail = () => {
     const [newComment, setNewComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
     const [canReview, setCanReview] = useState(false);
-    const [hasReviewed, setHasReviewed] = useState(false);
-    const [reviewStatus, setReviewStatus] = useState('');
+    const [_hasReviewed, setHasReviewed] = useState(false);
+    const [_reviewStatus, setReviewStatus] = useState('');
     const [relatedProducts, setRelatedProducts] = useState([]);
 
     useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                const res = await api.get(`/products/${id}`);
-                setProduct(res.data);
-            } catch (_err) {
-                setError('Không thể lấy thông tin sản phẩm');
-            }
-        };
-
         const fetchReviews = async () => {
             try {
                 const res = await api.get(`/reviews/product/${id}`);

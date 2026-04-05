@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getUsers, googleLogin, getProfile, updateProfile, changePassword } = require('../controllers/auth.controller');
+const { register, login, getUsers, updateUserByAdmin, googleLogin, getProfile, updateProfile, changePassword } = require('../controllers/auth.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
 // @route   POST api/auth/register
@@ -29,5 +29,6 @@ router.put('/profile/password', protect, changePassword);
 // @desc    Get all users
 // @access  Private/Admin
 router.route('/users').get(protect, admin, getUsers);
+router.route('/users/:id').put(protect, admin, updateUserByAdmin);
 
 module.exports = router;

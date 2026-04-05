@@ -29,6 +29,10 @@ const UserSchema = new Schema({
     address: {
         type: String
     },
+    is_vip: {
+        type: Boolean,
+        default: false
+    },
     status: {
         type: String,
         enum: ['active', 'locked'],

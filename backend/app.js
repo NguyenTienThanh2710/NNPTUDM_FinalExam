@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const multer = require('multer');
+const { protect, admin } = require('./src/middleware/auth.middleware');
 
 // Load env vars
 dotenv.config({ quiet: true });
@@ -25,6 +30,47 @@ app.use(cors());
 
 // Body parser
 app.use(express.json());
+
+const uploadsDir = path.join(__dirname, 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
+app.use('/uploads', express.static(uploadsDir));
+
+const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+        const originalExt = path.extname(file.originalname || '');
+        const ext = originalExt.length <= 12 ? originalExt : '';
+        cb(null, `${crypto.randomUUID()}${ext}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        const allowed = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+            'image/svg+xml'
+        ]);
+        cb(null, allowed.has(file.mimetype));
+    }
+});
+
+app.post('/api/upload', protect, admin, upload.any(), (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (!files.length) {
+        res.status(400).json({ message: 'Vui lòng chọn ảnh để upload' });
+        return;
+    }
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const urls = files.map((f) => `${baseUrl}/uploads/${f.filename}`);
+    res.json({ url: urls[0], urls });
+});
 
 // Mount routers
 app.use('/api/auth', auth);
