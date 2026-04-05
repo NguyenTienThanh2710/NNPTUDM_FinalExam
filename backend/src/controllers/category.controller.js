@@ -1,4 +1,5 @@
 const Category = require('../models/category.model');
+const Product = require('../models/product.model');
 
 // @desc    Create a category
 // @route   POST /api/categories
@@ -11,7 +12,7 @@ const createCategory = async (req, res) => {
         const createdCategory = await category.save();
         res.status(201).json(createdCategory);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -21,9 +22,13 @@ const createCategory = async (req, res) => {
 const getCategories = async (req, res) => {
     try {
         const categories = await Category.find({});
-        res.json(categories);
+        const counts = await Product.aggregate([
+            { $group: { _id: '$category_id', count: { $sum: 1 } } }
+        ]);
+        const countByCategoryId = new Map(counts.map((c) => [String(c._id), c.count]));
+        res.json(categories.map((c) => ({ ...c.toObject(), product_count: countByCategoryId.get(String(c._id)) || 0 })));
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -37,10 +42,10 @@ const getCategoryById = async (req, res) => {
         if (category) {
             res.json(category);
         } else {
-            res.status(404).json({ message: 'Category not found' });
+            res.status(404).json({ message: 'Không tìm thấy danh mục' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -60,10 +65,10 @@ const updateCategory = async (req, res) => {
             const updatedCategory = await category.save();
             res.json(updatedCategory);
         } else {
-            res.status(404).json({ message: 'Category not found' });
+            res.status(404).json({ message: 'Không tìm thấy danh mục' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -74,14 +79,23 @@ const deleteCategory = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
 
-        if (category) {
-            await category.remove();
-            res.json({ message: 'Category removed' });
-        } else {
-            res.status(404).json({ message: 'Category not found' });
+        if (!category) {
+            return res.status(404).json({ message: 'Không tìm thấy danh mục' });
         }
+
+        // Integrity constraint: Check for associated products
+        const productCount = await Product.countDocuments({ category_id: req.params.id });
+        if (productCount > 0) {
+            return res.status(400).json({ 
+                message: `Không thể xoá danh mục này vì đang có ${productCount} sản phẩm trực thuộc. Vui lòng xoá hoặc chuyển sản phẩm sang danh mục khác trước.` 
+            });
+        }
+
+        await Category.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Đã xoá danh mục thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 

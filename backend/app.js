@@ -3,9 +3,14 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const multer = require('multer');
+const { protect, admin } = require('./src/middleware/auth.middleware');
 
 // Load env vars
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Route files
 const auth = require('./src/routes/auth.route');
@@ -14,6 +19,10 @@ const categoryRoutes = require('./src/routes/category.route');
 const productRoutes = require('./src/routes/product.route');
 const cartRoutes = require('./src/routes/cart.route');
 const orderRoutes = require('./src/routes/order.route');
+const wishlistRoutes = require('./src/routes/wishlist.route');
+const adminRoutes = require('./src/routes/admin.route');
+const reviewRoutes = require('./src/routes/review.route');
+const locationRoutes = require('./src/routes/location.route');
 
 const app = express();
 
@@ -23,6 +32,47 @@ app.use(cors());
 // Body parser
 app.use(express.json());
 
+const uploadsDir = path.join(__dirname, 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
+app.use('/uploads', express.static(uploadsDir));
+
+const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+        const originalExt = path.extname(file.originalname || '');
+        const ext = originalExt.length <= 12 ? originalExt : '';
+        cb(null, `${crypto.randomUUID()}${ext}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        const allowed = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+            'image/svg+xml'
+        ]);
+        cb(null, allowed.has(file.mimetype));
+    }
+});
+
+app.post('/api/upload', protect, admin, upload.any(), (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (!files.length) {
+        res.status(400).json({ message: 'Vui lòng chọn ảnh để upload' });
+        return;
+    }
+
+    // Return relative paths for better portability
+    const paths = files.map((f) => `uploads/${f.filename}`);
+    res.json({ url: paths[0], urls: paths });
+});
+
 // Mount routers
 app.use('/api/auth', auth);
 app.use('/api/brands', brandRoutes);
@@ -30,6 +80,10 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/locations', locationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -39,23 +93,42 @@ const start = async () => {
         let mongoUri = process.env.MONGO_URI;
 
         if (!mongoUri) {
-            const dbName = process.env.MONGO_DB_NAME || 'nnptudm_finalexam';
-            const port = Number(process.env.MONGO_PORT || 27017);
+            const dbName = process.env.MONGO_DB_NAME || 'shop-database';
+            let port = Number(process.env.MONGO_PORT || 27017);
 
-            memoryServer = await MongoMemoryServer.create({
-                instance: { port, dbName }
-            });
+            try {
+                memoryServer = await MongoMemoryServer.create({
+                    instance: { port, dbName }
+                });
+            } catch (error) {
+                console.log(`Failed to start on port ${port}, trying a random port...`);
+                // If it fails on the specific port, try letting it pick a random one
+                memoryServer = await MongoMemoryServer.create({
+                    instance: { dbName }
+                });
+            }
 
-            mongoUri = `mongodb://127.0.0.1:${port}/${dbName}`;
+            mongoUri = memoryServer.getUri();
+            console.log(`Memory MongoDB started at: ${mongoUri}`);
         }
 
         await mongoose.connect(mongoUri);
         console.log('MongoDB Connected...');
 
-        app.listen(
-            PORT, 
-            console.log(`Server running on port ${PORT}`)
-        );
+        // Auto-seed if in Memory Mode and DB is empty
+        if (!process.env.MONGO_URI) {
+            const Product = require('./src/models/product.model');
+            const count = await Product.countDocuments();
+            if (count === 0) {
+                console.log('Database is empty, starting auto-seeding...');
+                const seedData = require('./seed_extended');
+                await seedData(mongoUri);
+            }
+        }
+
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
 
         const shutdown = async () => {
             try {
@@ -70,6 +143,15 @@ const start = async () => {
 
         process.on('SIGINT', shutdown);
         process.on('SIGTERM', shutdown);
+
+        process.on('unhandledRejection', (err) => {
+            console.error('Unhandled Rejection at:', err);
+        });
+
+        process.on('uncaughtException', (err) => {
+            console.error('Uncaught Exception:', err);
+            process.exit(1);
+        });
     } catch (err) {
         console.error(err.message);
         process.exit(1);

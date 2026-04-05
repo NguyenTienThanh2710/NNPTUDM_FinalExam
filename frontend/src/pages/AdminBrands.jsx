@@ -1,25 +1,254 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import api from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getImageURL } from '../utils/imageUtils';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [formName, setFormName] = useState('');
+    const [formLogo, setFormLogo] = useState('');
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+    const [editingBrandId, setEditingBrandId] = useState(null);
+    const [deleteConfirmBrandId, setDeleteConfirmBrandId] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [notice, setNotice] = useState(null);
+    const formRef = useRef(null);
+    const nameInputRef = useRef(null);
+    const pageSize = 6;
 
     useEffect(() => {
         api.get('/brands').then(res => setBrands(res.data)).catch(console.error);
     }, []);
+
+
+    const pageCount = Math.ceil(brands.length / pageSize);
+    const safePageCount = pageCount === 0 ? 1 : pageCount;
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
+    useEffect(() => {
+        if (pageCount === 0) {
+            if (currentPage !== 1) setCurrentPage(1);
+            return;
+        }
+        if (currentPage > pageCount) setCurrentPage(pageCount);
+    }, [currentPage, pageCount]);
+
+    const paginatedBrands = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return brands.slice(startIndex, startIndex + pageSize);
+    }, [brands, currentPage]);
+
+    const pageNumbers = useMemo(() => {
+        return Array.from({ length: safePageCount }, (_, idx) => idx + 1);
+    }, [safePageCount]);
+
+    const activeBrandCount = useMemo(() => {
+        return brands.filter((b) => (b.product_count ?? 0) > 0).length;
+    }, [brands]);
+
+    const inactiveBrandCount = useMemo(() => {
+        return brands.length - activeBrandCount;
+    }, [brands, activeBrandCount]);
+
+    const totalProductCount = useMemo(() => {
+        return brands.reduce((sum, b) => sum + (b.product_count ?? 0), 0);
+    }, [brands]);
+
+    const fetchBrands = async () => {
+        const res = await api.get('/brands');
+        setBrands(res.data);
+    };
+
+    const openCreate = () => {
+        setEditingBrandId(null);
+        setFormName('');
+        setFormLogo('');
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(() => nameInputRef.current?.focus(), 150);
+    };
+
+    const openEdit = (brand) => {
+        setEditingBrandId(brand._id);
+        setFormName(brand.name || '');
+        setFormLogo(brand.logo || '');
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(() => nameInputRef.current?.focus(), 150);
+    };
+
+    const handleSaveBrand = async (e) => {
+        e?.preventDefault();
+        if (isSaving) return;
+
+        const payload = {
+            name: formName.trim(),
+            logo: formLogo.trim()
+        };
+
+        if (!payload.name) {
+            setNotice({ type: 'error', text: 'Vui lòng nhập tên thương hiệu.' });
+            nameInputRef.current?.focus();
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            if (editingBrandId) {
+                await api.put(`/brands/${editingBrandId}`, payload);
+            } else {
+                await api.post('/brands', payload);
+            }
+            await fetchBrands();
+            setNotice({ type: 'success', text: editingBrandId ? 'Cập nhật thương hiệu thành công' : 'Thêm thương hiệu thành công' });
+            setFormName('');
+            setFormLogo('');
+            setEditingBrandId(null);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || (editingBrandId ? 'Cập nhật thương hiệu thất bại' : 'Thêm thương hiệu thất bại') });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleUploadLogo = async (file) => {
+        if (!file || isUploadingLogo) return;
+        
+        // Show local preview immediately
+        const localPreviewUrl = URL.createObjectURL(file);
+        setFormLogo(localPreviewUrl);
+
+        const formData = new FormData();
+        formData.append('files', file);
+        try {
+            setIsUploadingLogo(true);
+            const res = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const url = res.data?.url;
+            if (url) {
+                setFormLogo(url);
+                setNotice({ type: 'success', text: 'Upload logo thành công' });
+            } else {
+                setNotice({ type: 'error', text: 'Upload logo thất bại' });
+                setFormLogo(''); // Reset if failed
+            }
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Upload logo thất bại' });
+            setFormLogo(''); // Reset if failed
+        } finally {
+            setIsUploadingLogo(false);
+            URL.revokeObjectURL(localPreviewUrl);
+        }
+    };
+
+    const handleResetForm = () => {
+        setEditingBrandId(null);
+        setFormName('');
+        setFormLogo('');
+    };
+
+    const handleDeleteBrand = (brandId) => {
+        setDeleteConfirmBrandId(brandId);
+    };
+
+    const confirmDeleteBrand = async () => {
+        const brandId = deleteConfirmBrandId;
+        if (!brandId) return;
+        try {
+            await api.delete(`/brands/${brandId}`);
+            await fetchBrands();
+            setNotice({ type: 'success', text: 'Đã xoá thương hiệu' });
+            if (editingBrandId === brandId) {
+                handleResetForm();
+            }
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Xoá thương hiệu thất bại' });
+        } finally {
+            setDeleteConfirmBrandId(null);
+        }
+    };
+
+    const handleExportBrands = (type = 'txt') => {
+        if (!brands.length) return;
+        const timestamp = new Date().toLocaleString('vi-VN');
+        const filename = `Danh_sach_thuong_hieu_${new Date().getTime()}`;
+
+        if (type === 'pdf') {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('BÁO CÁO DANH SÁCH THƯƠNG HIỆU', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Ngày xuất: ${timestamp}`, 105, 22, { align: 'center' });
+
+            const data = brands.map((b, i) => [
+                i + 1,
+                b.name,
+                b.product_count || 0,
+                b.product_count > 0 ? 'Đang kinh doanh' : 'Chưa có sản phẩm'
+            ]);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['STT', 'Tên thương hiệu', 'Số sản phẩm', 'Trạng thái']],
+                body: data,
+                headStyles: { fillColor: [0, 62, 199] }
+            });
+
+            doc.save(`${filename}.pdf`);
+            return;
+        }
+
+        let content = `BÁO CÁO THƯƠNG HIỆU - ${timestamp}\n`;
+        content += `-------------------------------------------\n`;
+        content += `Tổng số thương hiệu: ${brands.length}\n`;
+        content += `Tổng số sản phẩm: ${totalProductCount}\n\n`;
+        
+        content += `CHI TIẾT THƯƠNG HIỆU:\n`;
+        brands.forEach((b, i) => {
+            content += `${i+1}. Tên: ${b.name} | Số sản phẩm: ${b.product_count || 0}\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.txt`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <AdminLayout
             title="Quản lý Thương hiệu"
-            subtitle="Xây dựng và tối ưu hóa hệ sinh thái đối tác của bạn."
+            subtitle="Tùy chỉnh các đối tác và biểu tượng thương hiệu trên hệ thống"
             actions={
-                <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-semibold shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                <button onClick={openCreate} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-semibold shadow-lg shadow-primary/20 active:scale-95 transition-all">
                     <span className="material-symbols-outlined">add_circle</span>
                     <span>Thêm thương hiệu</span>
                 </button>
             }
         >
             <div className="space-y-8 text-left">
+                {notice && (
+                    <div className={`rounded-xl px-4 py-3 shadow-sm border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                        <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-lg">
+                                {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                            </span>
+                            <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                            <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                                <span className="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {/* Dashboard Stats Ribbon */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-2 border-primary/20">
@@ -29,18 +258,18 @@ const AdminBrands = () => {
                     </div>
                     <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-2 border-emerald-500/20">
                         <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase">Hoạt động</p>
-                        <h3 className="text-2xl font-black mt-1">18</h3>
+                        <h3 className="text-2xl font-black mt-1">{activeBrandCount.toLocaleString()}</h3>
                         <p className="text-xs text-slate-400 mt-1">Đang kinh doanh</p>
                     </div>
                     <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-2 border-amber-500/20">
                         <p className="text-xs font-bold text-amber-600 tracking-widest uppercase">Tạm ngưng</p>
-                        <h3 className="text-2xl font-black mt-1">06</h3>
-                        <p className="text-xs text-slate-400 mt-1">Chờ cập nhật</p>
+                        <h3 className="text-2xl font-black mt-1">{inactiveBrandCount.toLocaleString()}</h3>
+                        <p className="text-xs text-slate-400 mt-1">Chưa có sản phẩm</p>
                     </div>
                     <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-2 border-primary/20">
                         <p className="text-xs font-bold text-primary tracking-widest uppercase">Sản phẩm</p>
-                        <h3 className="text-2xl font-black mt-1">1,248</h3>
-                        <p className="text-xs text-slate-400 mt-1">Đã phân loại</p>
+                        <h3 className="text-2xl font-black mt-1">{totalProductCount.toLocaleString()}</h3>
+                        <p className="text-xs text-slate-400 mt-1">Tổng số sản phẩm</p>
                     </div>
                 </div>
 
@@ -49,12 +278,20 @@ const AdminBrands = () => {
                     <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
                         <div className="p-6 border-b border-surface-container flex justify-between items-center bg-white">
                             <h3 className="font-bold text-lg">Danh sách thương hiệu</h3>
-                            <div className="flex gap-2">
-                                <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span className="material-symbols-outlined">filter_list</span>
+                            <div className="flex gap-1">
+                                <button 
+                                    onClick={() => handleExportBrands('txt')}
+                                    className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    title="Xuất file TEXT"
+                                >
+                                    <span className="material-symbols-outlined">description</span>
                                 </button>
-                                <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span className="material-symbols-outlined">download</span>
+                                <button 
+                                    onClick={() => handleExportBrands('pdf')}
+                                    className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    title="Xuất file PDF"
+                                >
+                                    <span className="material-symbols-outlined">picture_as_pdf</span>
                                 </button>
                             </div>
                         </div>
@@ -69,12 +306,12 @@ const AdminBrands = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-surface-container">
-                                    {brands.map((brand) => (
+                                    {paginatedBrands.map((brand) => (
                                         <tr key={brand._id} className="hover:bg-surface-container-low/30 transition-colors group">
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center p-2 group-hover:scale-105 transition-transform text-2xl font-bold font-serif overflow-hidden">
-                                                        {brand.logo ? <img src={brand.logo} className="object-contain w-full h-full" alt={brand.name} /> : brand.name.charAt(0)}
+                                                        {brand.logo ? <img src={getImageURL(brand.logo)} className="object-contain w-full h-full" alt={brand.name} /> : brand.name.charAt(0)}
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-on-surface">{brand.name}</p>
@@ -83,71 +320,130 @@ const AdminBrands = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5">
-                                                <span className="text-sm font-semibold py-1 px-3 bg-blue-50 text-blue-700 rounded-full">N/A</span>
+                                                <span className="text-sm font-semibold py-1 px-3 bg-blue-50 text-blue-700 rounded-full">{(brand.product_count ?? 0).toLocaleString()}</span>
                                             </td>
                                             <td className="px-6 py-5">
-                                                <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
-                                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                                    Đang kinh doanh
-                                                </div>
+                                                {brand.product_count > 0 ? (
+                                                    <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                        Đang kinh doanh
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                                                        Chưa có sản phẩm
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors">
+                                                <button type="button" onClick={() => openEdit(brand)} className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="Chỉnh sửa">
                                                         <span className="material-symbols-outlined text-lg">edit</span>
                                                     </button>
-                                                    <button className="p-2 hover:bg-error/10 text-error rounded-lg transition-colors">
+                                                <button type="button" onClick={() => handleDeleteBrand(brand._id)} className="p-2 hover:bg-error/10 text-error rounded-lg transition-colors" title="Xoá">
                                                         <span className="material-symbols-outlined text-lg">delete</span>
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
+                                    {paginatedBrands.length === 0 && (
+                                        <tr>
+                                            <td className="px-6 py-10 text-center text-sm text-on-surface-variant" colSpan={4}>
+                                                Không có thương hiệu nào
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
-                        <div className="p-6 bg-surface-container-low/30 flex justify-between items-center text-sm border-t border-surface-container">
-                            <p className="text-slate-500">Hiển thị tất cả {brands.length} thương hiệu</p>
-                            <div className="flex gap-1">
-                                <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold">1</button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors">2</button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors">3</button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
+                        {pageCount > 1 && (
+                            <div className="p-6 bg-surface-container-low/30 flex justify-end items-center text-sm border-t border-surface-container">
+                                <div className="flex gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                                        disabled={currentPage <= 1}
+                                    >
+                                        <span className="material-symbols-outlined text-sm">chevron_left</span>
+                                    </button>
+                                    {pageNumbers.map((page) => (
+                                        <button
+                                            key={page}
+                                            type="button"
+                                            onClick={() => setCurrentPage(page)}
+                                            className={page === currentPage
+                                                ? "w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold"
+                                                : "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors"}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((p) => Math.min(safePageCount, p + 1))}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                                        disabled={currentPage >= safePageCount}
+                                    >
+                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Fast Edit/Add Panel */}
                     <div className="col-span-12 lg:col-span-4 space-y-6">
-                        <div className="bg-surface-container-lowest p-8 rounded-xl shadow-sm sticky top-24 border border-outline-variant/10">
-                            <h3 className="font-extrabold text-xl mb-6">Thêm thương hiệu mới</h3>
-                            <form className="space-y-6">
+                        <div ref={formRef} className="bg-surface-container-lowest p-8 rounded-xl shadow-sm sticky top-24 border border-outline-variant/10">
+                            <h3 className="font-extrabold text-xl mb-6">{editingBrandId ? 'Cập nhật thương hiệu' : 'Thêm thương hiệu mới'}</h3>
+                            <form onSubmit={handleSaveBrand} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Tên thương hiệu</label>
-                                    <input className="w-full bg-surface-container hover:bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-slate-400 transition-colors" placeholder="Vd: Apple, Sony..." type="text" />
+                                    <input
+                                        ref={nameInputRef}
+                                        value={formName}
+                                        onChange={(e) => setFormName(e.target.value)}
+                                        className="w-full bg-surface-container hover:bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-slate-400 transition-colors"
+                                        placeholder="Vd: Apple, Sony..."
+                                        type="text"
+                                    />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Mô tả</label>
-                                    <textarea className="w-full bg-surface-container hover:bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-slate-400 transition-colors" placeholder="Nhập tóm tắt về thương hiệu..." rows="4"></textarea>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Trạng thái</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center gap-2 cursor-pointer group">
-                                            <input defaultChecked className="w-4 h-4 text-primary focus:ring-primary border-slate-300" name="status" type="radio" />
-                                            <span className="text-sm font-medium">Hoạt động</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer group">
-                                            <input className="w-4 h-4 text-primary focus:ring-primary border-slate-300" name="status" type="radio" />
-                                            <span className="text-sm font-medium">Tạm ngưng</span>
-                                        </label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Logo (URL)</label>
+                                    <input
+                                        value={formLogo}
+                                        onChange={(e) => setFormLogo(e.target.value)}
+                                        className="w-full bg-surface-container hover:bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-slate-400 transition-colors"
+                                        placeholder="https://..."
+                                        type="text"
+                                    />
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleUploadLogo(e.target.files?.[0])}
+                                            className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-surface-container-high file:px-4 file:py-2 file:text-xs file:font-bold file:text-on-surface hover:file:opacity-90"
+                                            disabled={isUploadingLogo}
+                                        />
+                                        {formLogo && (
+                                            <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+                                                <img src={getImageURL(formLogo)} alt="Logo preview" className="w-full h-full object-contain" />
+                                            </div>
+                                        )}
                                     </div>
+                                    {isUploadingLogo && (
+                                        <div className="mt-2 text-xs text-on-surface-variant">Đang upload...</div>
+                                    )}
                                 </div>
                                 <div className="pt-4 flex gap-3">
-                                    <button className="flex-1 px-4 py-3 bg-surface-container-high text-on-secondary-container rounded-xl font-bold hover:bg-slate-200 transition-colors" type="reset">Hủy</button>
-                                    <button className="flex-[2] px-4 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-95 transition-all" type="button">Lưu thương hiệu</button>
+                                    <button onClick={handleResetForm} className="flex-1 px-4 py-3 bg-surface-container-high text-on-secondary-container rounded-xl font-bold hover:bg-slate-200 transition-colors" type="button">
+                                        Làm mới
+                                    </button>
+                                    <button disabled={isSaving} className="flex-[2] px-4 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
+                                        {isSaving ? 'Đang lưu...' : (editingBrandId ? 'Cập nhật thương hiệu' : 'Lưu thương hiệu')}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -165,6 +461,33 @@ const AdminBrands = () => {
                     </div>
                 </div>
             </div>
+            {deleteConfirmBrandId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 py-10">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirmBrandId(null)} />
+                    <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-outline-variant/20 shadow-2xl overflow-hidden">
+                        <div className="p-6">
+                            <h3 className="text-lg font-black text-on-surface">Xác nhận xoá</h3>
+                            <p className="mt-2 text-sm text-on-surface-variant">Bạn có chắc muốn xoá thương hiệu này không?</p>
+                        </div>
+                        <div className="px-6 pb-6 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteConfirmBrandId(null)}
+                                className="px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface font-bold hover:opacity-90 active:scale-95 transition-all"
+                            >
+                                Huỷ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteBrand}
+                                className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 active:scale-95 transition-all"
+                            >
+                                Xoá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 };

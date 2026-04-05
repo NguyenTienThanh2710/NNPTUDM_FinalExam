@@ -16,7 +16,9 @@ const OrderItem = require('./src/models/orderItem.model');
 
 const seedData = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
+        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shop-database';
+        console.log(`Connecting to MongoDB: ${mongoUri}`);
+        await mongoose.connect(mongoUri);
 
         await Promise.all([
             Role.deleteMany({}),
@@ -39,7 +41,7 @@ const seedData = async () => {
         const userRoleId = roles[1]._id;
 
         console.log('Seeding Users...');
-        const passwordHash = await bcrypt.hash('123456', 10);
+        const passwordHash = await bcrypt.hash('password123', 10);
         const users = await User.insertMany([
             {
                 name: 'System Admin',
@@ -47,6 +49,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: adminRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=11',
+                address: 'Admin Building, Hanoi',
                 status: 'active'
             },
             {
@@ -55,6 +58,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=12',
+                address: '123 Hoang Hoa Tham, Ba Dinh, Hanoi',
                 status: 'active'
             },
             {
@@ -63,6 +67,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=5',
+                address: '456 Nguyen Trai, Thanh Xuan, Hanoi',
                 status: 'active'
             },
             {
@@ -71,6 +76,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=60',
+                address: '789 Le Duan, District 1, HCMC',
                 status: 'active'
             }
         ]);
@@ -96,82 +102,84 @@ const seedData = async () => {
 
         console.log('Seeding Products...');
         const products = await Product.insertMany([
-            // Apple Phones
+            // --- APPLE ---
             {
-                name: 'iPhone 15 Pro Max 256GB', price: 34990000, stock: 45, brand_id: brands[0]._id, category_id: categories[0]._id,
-                description: 'Titanium framework, chip A17 Pro, camera xoá phông quang học 5x.',
-                images: ['https://picsum.photos/seed/nnptudm-iphone15-promax/900/900']
+                name: 'iPhone 15 Pro Max 256GB - Blue Titanium', price: 34990000, stock: 45, brand_id: brands[0]._id, category_id: categories[0]._id,
+                description: 'Khung titan bền bỉ, chip A17 Pro siêu mạnh, camera zoom quang 5x chuyên nghiệp.',
+                images: ['https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'iPhone 14, 128GB, Blue', price: 18990000, stock: 20, brand_id: brands[0]._id, category_id: categories[0]._id,
-                description: 'Smartphone quốc dân nhỏ gọn với sức mạnh ấn tượng.',
-                images: ['https://picsum.photos/seed/nnptudm-iphone14-blue/900/900']
+                name: 'iPhone 15 Plus 128GB - Pink', price: 25990000, stock: 20, brand_id: brands[0]._id, category_id: categories[0]._id,
+                description: 'Màn hình Dynamic Island, pin trâu nhất lịch sử iPhone, màu sắc trẻ trung.',
+                images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&q=80&w=1000']
             },
-            // Samsung Phones
+            {
+                name: 'iPhone 13 128GB - Midnight', price: 15490000, stock: 35, brand_id: brands[0]._id, category_id: categories[0]._id,
+                description: 'Thiết kế cổ điển, hiệu năng vẫn cực kỳ ổn định trong tầm giá.',
+                images: ['https://images.unsplash.com/photo-1633113089631-6456cccaadad?auto=format&fit=crop&q=80&w=1000']
+            },
+
+            // --- SAMSUNG ---
             {
                 name: 'Samsung Galaxy S24 Ultra 512GB', price: 32990000, stock: 32, brand_id: brands[1]._id, category_id: categories[0]._id,
-                description: 'Tích hợp AI quyền năng, thân titan và bút SPen tiện dụng.',
-                images: ['https://picsum.photos/seed/nnptudm-s24-ultra/900/900']
+                description: 'Quyền năng Galaxy AI, màn hình phẳng 2600 nits, bút S-Pen thông minh.',
+                images: ['https://images.unsplash.com/photo-1678911820864-e2c567c655d7?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'Samsung Galaxy Z Fold5', price: 39990000, stock: 12, brand_id: brands[1]._id, category_id: categories[0]._id,
-                description: 'Màn hình gập thế hệ mới, đa nhiệm hoàn hảo như một PC bỏ túi.',
-                images: ['https://picsum.photos/seed/nnptudm-zfold5/900/900']
+                name: 'Samsung Galaxy Z Fold5 256GB', price: 39990000, stock: 12, brand_id: brands[1]._id, category_id: categories[0]._id,
+                description: 'Màn hình gập không kẽ hở, đa nhiệm đỉnh cao, rạp chiếu phim bỏ túi.',
+                images: ['https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'Galaxy A54 5G', price: 9500000, stock: 0, brand_id: brands[1]._id, category_id: categories[0]._id,
-                description: 'Pin khỏe, camera OIS chống rung, màu sắc trẻ trung.',
-                images: ['https://picsum.photos/seed/nnptudm-a54-5g/900/900']
-            },
-            // Xiaomi
-            {
-                name: 'Xiaomi 14 Pro', price: 22990000, stock: 25, brand_id: brands[2]._id, category_id: categories[0]._id,
-                description: 'Camera hợp tác Leica, Snapdragon 8 Gen 3 siêu mạnh.',
-                images: ['https://picsum.photos/seed/nnptudm-xiaomi14pro/900/900']
-            },
-            // Laptops
-            {
-                name: 'MacBook Pro 14 M3 Pro', price: 49990000, stock: 15, brand_id: brands[0]._id, category_id: categories[1]._id,
-                description: 'Sức mạnh quái vật từ chip M3 Pro dành cho editor, coder.',
-                images: ['https://picsum.photos/seed/nnptudm-macbook-pro-14/900/900']
+                name: 'Samsung Galaxy Z Flip5 512GB', price: 21990000, stock: 18, brand_id: brands[1]._id, category_id: categories[0]._id,
+                description: 'Màn hình ngoài Flex Window cực lớn, thiết kế thời trang, gập mở linh hoạt.',
+                images: ['https://images.unsplash.com/photo-1689129524021-3e4093f185f3?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'Asus ROG Zephyrus G14', price: 35990000, stock: 8, brand_id: brands[5]._id, category_id: categories[1]._id,
-                description: 'Laptop gaming nhỏ gọn 14 inch mạnh mẽ nhất thế giới.',
-                images: ['https://picsum.photos/seed/nnptudm-rog-g14/900/900']
+                name: 'Samsung Galaxy S23 FE 128GB', price: 12990000, stock: 25, brand_id: brands[1]._id, category_id: categories[0]._id,
+                description: 'Hiệu năng flagship với mức giá dễ tiếp cận, camera chụp đêm ấn tượng.',
+                images: ['https://images.unsplash.com/photo-1681283737502-0e9e19d71c82?auto=format&fit=crop&q=80&w=1000']
             },
-            // Tablets
+
+            // --- XIAOMI ---
             {
-                name: 'iPad Pro M2 11-inch', price: 23990000, stock: 20, brand_id: brands[0]._id, category_id: categories[2]._id,
-                description: 'Tablet chuyên nghiệp hỗ trợ màn hình 120Hz ProMotion.',
-                images: ['https://picsum.photos/seed/nnptudm-ipad-pro-m2/900/900']
-            },
-            {
-                name: 'Samsung Galaxy Tab S9 Ultra', price: 28990000, stock: 10, brand_id: brands[1]._id, category_id: categories[2]._id,
-                description: 'Màn hình khổng lồ 14.6 inch, chống nước IP68.',
-                images: ['https://picsum.photos/seed/nnptudm-tab-s9-ultra/900/900']
-            },
-            // Watches
-            {
-                name: 'Apple Watch Ultra 2', price: 21990000, stock: 5, brand_id: brands[0]._id, category_id: categories[3]._id,
-                description: 'Đồng hồ thể thao chuyên biệt, titan nguyên khối, định vị GPS kép.',
-                images: ['https://picsum.photos/seed/nnptudm-watch-ultra2/900/900']
+                name: 'Xiaomi 14 Pro Leica', price: 22990000, stock: 15, brand_id: brands[2]._id, category_id: categories[0]._id,
+                description: 'Hệ thống ống kính Leica Optic cao cấp, sạc siêu nhanh 120W.',
+                images: ['https://images.unsplash.com/photo-1621330396173-e41b1cafd17f?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'Galaxy Watch 6 Classic', price: 8990000, stock: 14, brand_id: brands[1]._id, category_id: categories[3]._id,
-                description: 'Viền xoay vật lý độc đáo, theo dõi huyết áp ECG.',
-                images: ['https://picsum.photos/seed/nnptudm-watch6-classic/900/900']
+                name: 'Xiaomi Redmi Note 13 Pro+ 5G', price: 10490000, stock: 50, brand_id: brands[2]._id, category_id: categories[0]._id,
+                description: 'Màn hình cong 1.5K, camera 200MP, thiết kế tinh tế đẳng cấp.',
+                images: ['https://images.unsplash.com/photo-1614605282121-729069d67ba5?auto=format&fit=crop&q=80&w=1000']
             },
-            // Audio
+
+            // --- OPPO ---
             {
-                name: 'Sony WH-1000XM5', price: 7990000, stock: 40, brand_id: brands[4]._id, category_id: categories[4]._id,
-                description: 'Chống ồn ANC dẫn đầu thị trường, dải âm tuyệt hảo.',
-                images: ['https://picsum.photos/seed/nnptudm-sony-xm5/900/900']
+                name: 'Oppo Find N3 Flip', price: 22990000, stock: 10, brand_id: brands[3]._id, category_id: categories[0]._id,
+                description: 'Bậc thầy về camera chân dung trên điện thoại gập, thiết kế sang trọng.',
+                images: ['https://images.unsplash.com/photo-1541140532154-b024fd304564?auto=format&fit=crop&q=80&w=1000']
             },
             {
-                name: 'AirPods Pro Gen 2', price: 5490000, stock: 68, brand_id: brands[0]._id, category_id: categories[4]._id,
-                description: 'Âm thanh vòm Spatial Audio, xuyên âm tự động.',
-                images: ['https://picsum.photos/seed/nnptudm-airpods-pro2/900/900']
+                name: 'Oppo Reno11 Pro 5G', price: 15990000, stock: 22, brand_id: brands[3]._id, category_id: categories[0]._id,
+                description: 'Chuyên gia chân dung, thiết kế lấy cảm hứng từ đá quý.',
+                images: ['https://images.unsplash.com/photo-1544244015-0cd4b3ffc6b0?auto=format&fit=crop&q=80&w=1000']
+            },
+
+            // --- LAPTOPS & OTHERS ---
+            {
+                name: 'MacBook Pro 14 M3 Chip', price: 39990000, stock: 15, brand_id: brands[0]._id, category_id: categories[1]._id,
+                description: 'Hiệu năng đồ họa đỉnh cao, thời lượng pin lên đến 22 giờ.',
+                images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=1000']
+            },
+            {
+                name: 'iPad Pro 12.9 M2 256GB', price: 29990000, stock: 12, brand_id: brands[0]._id, category_id: categories[2]._id,
+                description: 'Màn hình Liquid Retina XDR siêu thực, sức mạnh máy tính trong thân hình tablet.',
+                images: ['https://images.unsplash.com/photo-1544244015-0cd4b3ffc6b0?auto=format&fit=crop&q=80&w=1000']
+            },
+            {
+                name: 'Sony WH-1000XM5 Noise Cancelling', price: 8490000, stock: 30, brand_id: brands[4]._id, category_id: categories[4]._id,
+                description: 'Công nghệ chống ồn hàng đầu thế giới, âm thanh Hi-Res chân thực.',
+                images: ['https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=1000']
             }
         ]);
 
@@ -185,6 +193,7 @@ const seedData = async () => {
         const order1 = await Order.create({
             user_id: users[1]._id,
             total_price: products[0].price + (products[13].price * 2), // iPhone + 2 airpods
+            shipping_address: '123 Main St, Hanoi, Vietnam',
             status: 'delivered',
             created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
         });
@@ -196,6 +205,7 @@ const seedData = async () => {
         const order2 = await Order.create({
             user_id: users[2]._id,
             total_price: products[6].price, // Macbook
+            shipping_address: '456 Nguyen Hue, HCMC, Vietnam',
             status: 'processing',
             created_at: new Date()
         });

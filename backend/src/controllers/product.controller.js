@@ -1,4 +1,6 @@
 const Product = require('../models/product.model');
+const OrderItem = require('../models/orderItem.model');
+const CartItem = require('../models/cartItem.model');
 
 // @desc    Create a product
 // @route   POST /api/products
@@ -11,7 +13,8 @@ const createProduct = async (req, res) => {
         stock,
         images,
         category_id,
-        brand_id
+        brand_id,
+        is_visible
     } = req.body;
 
     try {
@@ -22,14 +25,15 @@ const createProduct = async (req, res) => {
             stock,
             images,
             category_id,
-            brand_id
+            brand_id,
+            is_visible: typeof is_visible === 'boolean' ? is_visible : true
         });
 
         const createdProduct = await product.save();
         res.status(201).json(createdProduct);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -38,10 +42,12 @@ const createProduct = async (req, res) => {
 // @access  Public
 const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({}).populate('category_id', 'name').populate('brand_id', 'name');
+        const isAdmin = req.user && req.user.role_id && req.user.role_id.name === 'ADMIN';
+        const filter = isAdmin ? {} : { $or: [{ is_visible: true }, { is_visible: { $exists: false } }] };
+        const products = await Product.find(filter).populate('category_id', 'name').populate('brand_id', 'name');
         res.json(products);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -52,13 +58,19 @@ const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id).populate('category_id', 'name').populate('brand_id', 'name');
 
-        if (product) {
-            res.json(product);
-        } else {
-            res.status(404).json({ message: 'Product not found' });
+        if (!product) {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+            return;
         }
+
+        const isAdmin = req.user && req.user.role_id && req.user.role_id.name === 'ADMIN';
+        if (product.is_visible === false && !isAdmin) {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+            return;
+        }
+        res.json(product);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -73,28 +85,30 @@ const updateProduct = async (req, res) => {
         stock,
         images,
         category_id,
-        brand_id
+        brand_id,
+        is_visible
     } = req.body;
 
     try {
         const product = await Product.findById(req.params.id);
 
         if (product) {
-            product.name = name || product.name;
-            product.price = price || product.price;
-            product.description = description || product.description;
-            product.stock = stock || product.stock;
-            product.images = images || product.images;
-            product.category_id = category_id || product.category_id;
-            product.brand_id = brand_id || product.brand_id;
+            if (name !== undefined) product.name = name;
+            if (price !== undefined) product.price = price;
+            if (description !== undefined) product.description = description;
+            if (stock !== undefined) product.stock = stock;
+            if (images !== undefined) product.images = images;
+            if (category_id !== undefined) product.category_id = category_id;
+            if (brand_id !== undefined) product.brand_id = brand_id;
+            if (typeof is_visible === 'boolean') product.is_visible = is_visible;
 
             const updatedProduct = await product.save();
             res.json(updatedProduct);
         } else {
-            res.status(404).json({ message: 'Product not found' });
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 
@@ -106,13 +120,21 @@ const deleteProduct = async (req, res) => {
         const product = await Product.findById(req.params.id);
 
         if (product) {
-            await product.remove();
-            res.json({ message: 'Product removed' });
+            // Check if product is part of any order (Constraint enforcement)
+            const hasOrders = await OrderItem.exists({ product_id: req.params.id });
+            if (hasOrders) {
+                return res.status(400).json({ 
+                    message: 'Không thể xoá sản phẩm này vì đã có đơn hàng liên quan. Vui lòng sử dụng tính năng "Ẩn" để ngừng kinh doanh.' 
+                });
+            }
+
+            await Product.deleteOne({ _id: req.params.id });
+            res.json({ message: 'Đã xoá sản phẩm' });
         } else {
-            res.status(404).json({ message: 'Product not found' });
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
 

@@ -11,6 +11,36 @@ const OrderSchema = new Schema({
         type: Number,
         required: true
     },
+    city: {
+        type: String,
+        required: true
+    },
+    district: {
+        type: String,
+        required: true
+    },
+    ward: {
+        type: String,
+        required: true
+    },
+    street_address: {
+        type: String,
+        required: true
+    },
+    phone_number: {
+        type: String,
+        required: true
+    },
+    payment_method: {
+        type: String,
+        enum: ['COD', 'BANK_TRANSFER'],
+        default: 'COD'
+    },
+    payment_status: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending'
+    },
     status: {
         type: String,
         enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
