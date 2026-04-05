@@ -73,8 +73,8 @@ npm run seed
 ```
 
 Tài khoản demo sau khi seed:
-- `user@example.com` / `123456`
-- `admin@example.com` / `123456`
+- `user@example.com` / `password123`
+- `admin@example.com` / `password123`
 
 Nếu không có lỗi, bạn sẽ thấy thông báo trên terminal:
 ```

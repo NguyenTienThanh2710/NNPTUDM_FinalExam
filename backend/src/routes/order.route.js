@@ -7,7 +7,8 @@ const {
     getOrderById,
     updateOrderStatus,
     updatePaymentStatus,
-    getDashboardStats
+    getDashboardStats,
+    cancelOrder
 } = require('../controllers/order.controller');
 
 const { protect, admin } = require('../middleware/auth.middleware');
@@ -26,6 +27,9 @@ router.route('/dashboard')
 
 router.route('/:id')
     .get(getOrderById);
+
+router.route('/:id/cancel')
+    .put(cancelOrder);
 
 router.route('/:id/status')
     .put(admin, updateOrderStatus);

@@ -7,6 +7,7 @@ const AdminBrands = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [formName, setFormName] = useState('');
     const [formLogo, setFormLogo] = useState('');
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [editingBrandId, setEditingBrandId] = useState(null);
     const [deleteConfirmBrandId, setDeleteConfirmBrandId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -109,6 +110,29 @@ const AdminBrands = () => {
             setNotice({ type: 'error', text: err.response?.data?.message || (editingBrandId ? 'Cập nhật thương hiệu thất bại' : 'Thêm thương hiệu thất bại') });
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleUploadLogo = async (file) => {
+        if (!file || isUploadingLogo) return;
+        const formData = new FormData();
+        formData.append('files', file);
+        try {
+            setIsUploadingLogo(true);
+            const res = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const url = res.data?.url;
+            if (url) {
+                setFormLogo(url);
+                setNotice({ type: 'success', text: 'Upload logo thành công' });
+            } else {
+                setNotice({ type: 'error', text: 'Upload logo thất bại' });
+            }
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Upload logo thất bại' });
+        } finally {
+            setIsUploadingLogo(false);
         }
     };
 
@@ -325,6 +349,23 @@ const AdminBrands = () => {
                                         placeholder="https://..."
                                         type="text"
                                     />
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleUploadLogo(e.target.files?.[0])}
+                                            className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-surface-container-high file:px-4 file:py-2 file:text-xs file:font-bold file:text-on-surface hover:file:opacity-90"
+                                            disabled={isUploadingLogo}
+                                        />
+                                        {formLogo && (
+                                            <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+                                                <img src={formLogo} alt="Logo preview" className="w-full h-full object-contain" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {isUploadingLogo && (
+                                        <div className="mt-2 text-xs text-on-surface-variant">Đang upload...</div>
+                                    )}
                                 </div>
                                 <div className="pt-4 flex gap-3">
                                     <button onClick={handleResetForm} className="flex-1 px-4 py-3 bg-surface-container-high text-on-secondary-container rounded-xl font-bold hover:bg-slate-200 transition-colors" type="button">

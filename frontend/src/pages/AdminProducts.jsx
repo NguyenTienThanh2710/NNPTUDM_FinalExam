@@ -14,6 +14,7 @@ const AdminProducts = () => {
     const [editingProductId, setEditingProductId] = useState(null);
     const [deleteConfirmProductId, setDeleteConfirmProductId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploadingImages, setIsUploadingImages] = useState(false);
     const [notice, setNotice] = useState(null);
     const [createForm, setCreateForm] = useState({
         name: '',
@@ -160,6 +161,36 @@ const AdminProducts = () => {
             setNotice({ type: 'error', text: err.response?.data?.message || (editingProductId ? 'Cập nhật sản phẩm thất bại' : 'Thêm sản phẩm thất bại') });
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleUploadProductImages = async (fileList) => {
+        const files = Array.from(fileList || []).filter(Boolean);
+        if (!files.length || isUploadingImages) return;
+        const formData = new FormData();
+        files.forEach((f) => formData.append('files', f));
+
+        try {
+            setIsUploadingImages(true);
+            const res = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const urls = Array.isArray(res.data?.urls) ? res.data.urls : (res.data?.url ? [res.data.url] : []);
+            if (!urls.length) {
+                setNotice({ type: 'error', text: 'Upload ảnh thất bại' });
+                return;
+            }
+
+            setCreateForm((prev) => {
+                const current = prev.imagesText ? prev.imagesText.trim() : '';
+                const addition = urls.join('\n');
+                return { ...prev, imagesText: current ? `${current}\n${addition}` : addition };
+            });
+            setNotice({ type: 'success', text: `Đã upload ${urls.length} ảnh` });
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Upload ảnh thất bại' });
+        } finally {
+            setIsUploadingImages(false);
         }
     };
 
@@ -465,6 +496,19 @@ const AdminProducts = () => {
                                         placeholder="https://...\nhttps://..."
                                         rows="8"
                                     />
+                                    <div className="mt-3">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(e) => handleUploadProductImages(e.target.files)}
+                                            className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-surface-container-high file:px-4 file:py-2 file:text-xs file:font-bold file:text-on-surface hover:file:opacity-90"
+                                            disabled={isUploadingImages}
+                                        />
+                                        {isUploadingImages && (
+                                            <div className="mt-2 text-xs text-on-surface-variant">Đang upload...</div>
+                                        )}
+                                    </div>
                                     {parsedImages.length > 0 && (
                                         <div className="mt-3 text-xs text-on-surface-variant">
                                             Đã nhận {parsedImages.length} ảnh
