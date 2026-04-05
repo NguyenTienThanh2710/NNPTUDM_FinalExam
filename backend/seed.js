@@ -16,7 +16,7 @@ const OrderItem = require('./src/models/orderItem.model');
 
 const seedData = async () => {
     try {
-        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nnptudm_finalexam';
+        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shop-database';
         console.log(`Connecting to MongoDB: ${mongoUri}`);
         await mongoose.connect(mongoUri);
 
@@ -49,6 +49,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: adminRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=11',
+                address: 'Admin Building, Hanoi',
                 status: 'active'
             },
             {
@@ -57,6 +58,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=12',
+                address: '123 Hoang Hoa Tham, Ba Dinh, Hanoi',
                 status: 'active'
             },
             {
@@ -65,6 +67,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=5',
+                address: '456 Nguyen Trai, Thanh Xuan, Hanoi',
                 status: 'active'
             },
             {
@@ -73,6 +76,7 @@ const seedData = async () => {
                 password: passwordHash,
                 role_id: userRoleId,
                 avatar: 'https://i.pravatar.cc/150?img=60',
+                address: '789 Le Duan, District 1, HCMC',
                 status: 'active'
             }
         ]);
@@ -189,6 +193,7 @@ const seedData = async () => {
         const order1 = await Order.create({
             user_id: users[1]._id,
             total_price: products[0].price + (products[13].price * 2), // iPhone + 2 airpods
+            shipping_address: '123 Main St, Hanoi, Vietnam',
             status: 'delivered',
             created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
         });
@@ -200,6 +205,7 @@ const seedData = async () => {
         const order2 = await Order.create({
             user_id: users[2]._id,
             total_price: products[6].price, // Macbook
+            shipping_address: '456 Nguyen Hue, HCMC, Vietnam',
             status: 'processing',
             created_at: new Date()
         });

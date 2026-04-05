@@ -45,7 +45,7 @@ const start = async () => {
         let mongoUri = process.env.MONGO_URI;
 
         if (!mongoUri) {
-            const dbName = process.env.MONGO_DB_NAME || 'nnptudm_finalexam';
+            const dbName = process.env.MONGO_DB_NAME || 'shop-database';
             let port = Number(process.env.MONGO_PORT || 27017);
 
             try {
