@@ -280,11 +280,47 @@ const updateProfile = async (req, res) => {
     }
 };
 
+// @desc    Change user password
+// @route   PUT /api/auth/profile/password
+// @access  Private
+const changePassword = async (req, res) => {
+    const { old_password, new_password } = req.body;
+
+    if (!old_password || !new_password) {
+        return res.status(400).json({ msg: 'Vui lòng cung cấp mật khẩu cũ và mật khẩu mới' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'Người dùng không tồn tại' });
+        }
+
+        // Check old password
+        const isMatch = await bcrypt.compare(old_password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Mật khẩu cũ không chính xác' });
+        }
+
+        // Encrypt new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(new_password, salt);
+
+        await user.save();
+
+        res.json({ success: true, msg: 'Đổi mật khẩu thành công' });
+    } catch (err) {
+        console.error('Lỗi đổi mật khẩu:', err.message);
+        res.status(500).send('Lỗi máy chủ');
+    }
+};
+
 module.exports = {
     register,
     login,
     getUsers,
     googleLogin,
     updateProfile,
-    getProfile
+    getProfile,
+    changePassword
 };

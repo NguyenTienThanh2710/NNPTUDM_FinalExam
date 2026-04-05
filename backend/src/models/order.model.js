@@ -15,6 +15,10 @@ const OrderSchema = new Schema({
         type: String,
         required: true
     },
+    phone_number: {
+        type: String,
+        required: true
+    },
     payment_method: {
         type: String,
         enum: ['COD', 'BANK_TRANSFER'],

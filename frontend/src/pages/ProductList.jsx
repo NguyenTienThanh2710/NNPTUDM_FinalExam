@@ -13,6 +13,10 @@ const ProductList = () => {
     const [notice, setNotice] = useState(null);
     const [wishlistedIds, setWishlistedIds] = useState([]);
     const [error, setError] = useState('');
+    const [minPrice, setMinPrice] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -66,11 +70,14 @@ const ProductList = () => {
 
     useEffect(() => {
         const categoryParam = searchParams.get('category');
-        if (!categoryParam) return;
-        if (categories.length === 0) return;
-        if (categories.some((c) => c._id === categoryParam)) {
-            setSelectedCategoryId(categoryParam);
+        if (categoryParam) {
+            if (categories.some((c) => c._id === categoryParam)) {
+                setSelectedCategoryId(categoryParam);
+            }
+        } else {
+            setSelectedCategoryId('all');
         }
+        setCurrentPage(1); // Reset page on category/search change
     }, [categories, searchParams]);
 
     useEffect(() => {
@@ -135,20 +142,21 @@ const ProductList = () => {
     const queryText = normalizeText(searchParams.get('q'));
 
     const filteredProducts = products.filter((p) => {
-        if (queryText) {
-            const name = normalizeText(p.name);
-            const brandName = normalizeText(typeof p.brand_id === 'string' ? '' : p.brand_id?.name);
-            const categoryName = normalizeText(typeof p.category_id === 'string' ? '' : p.category_id?.name);
-            const isMatch = name.includes(queryText) || brandName.includes(queryText) || categoryName.includes(queryText);
-            if (!isMatch) return false;
-        }
+        const searchTerm = searchParams.get('search')?.toLowerCase() || '';
+        const isSearchMatch = !searchTerm || p.name.toLowerCase().includes(searchTerm
 
         const brandId = typeof p.brand_id === 'string' ? p.brand_id : p.brand_id?._id;
         const isBrandMatch = selectedBrandIds.length === 0 || (brandId && selectedBrandIds.includes(brandId));
 
-        if (selectedCategoryId === 'all') return isBrandMatch;
-        const categoryId = typeof p.category_id === 'string' ? p.category_id : p.category_id?._id;
-        return isBrandMatch && categoryId === selectedCategoryId;
+        let isCategoryMatch = true;
+        if (selectedCategoryId !== 'all') {
+            const categoryId = typeof p.category_id === 'string' ? p.category_id : p.category_id?._id;
+            isCategoryMatch = categoryId === selectedCategoryId;
+        }
+
+        const isPriceMatch = (!minPrice || p.price >= Number(minPrice)) && (!maxPrice || p.price <= Number(maxPrice));
+
+        return isSearchMatch && isBrandMatch && isCategoryMatch && isPriceMatch;
     });
 
     const getObjectIdTime = (id) => {
@@ -157,12 +165,25 @@ const ProductList = () => {
         return Number.isFinite(seconds) ? seconds * 1000 : 0;
     };
 
-    const displayedProducts = [...filteredProducts].sort((a, b) => {
+    const sortedProducts = [...filteredProducts].sort((a, b) => {
         if (sortOption === 'price_asc') return (a.price ?? 0) - (b.price ?? 0);
         if (sortOption === 'price_desc') return (b.price ?? 0) - (a.price ?? 0);
         if (sortOption === 'newest') return getObjectIdTime(b._id) - getObjectIdTime(a._id);
         return 0;
     });
+
+    const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+    const displayedProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const handleClearFilters = () => {
+        setMinPrice('');
+        setMaxPrice('');
+        setSelectedBrandIds([]);
+        setSelectedCategoryId('all');
+        setSortOption('newest');
+        setSearchParams({});
+        setCurrentPage(1);
+    };
 
     return (
         <main className="pt-28 pb-20 max-w-7xl mx-auto px-6 min-h-screen">
@@ -225,6 +246,76 @@ const ProductList = () => {
                                     </label>
                                 ))}
                             </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-xs font-bold tracking-widest text-outline uppercase mb-6">Khoảng giá</h3>
+                            <div className="space-y-6">
+                                {/* Quick Ranges */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { label: 'Tất cả', min: '', max: '' },
+                                        { label: 'Dưới 10tr', min: '0', max: '10000000' },
+                                        { label: '10tr - 20tr', min: '10000000', max: '20000000' },
+                                        { label: '20tr - 30tr', min: '20000000', max: '30000000' },
+                                        { label: '30tr - 50tr', min: '30000000', max: '50000000' },
+                                        { label: 'Trên 50tr', min: '50000000', max: '200000000' }
+                                    ].map((range, idx) => {
+                                        const isSelected = minPrice === range.min && (maxPrice === range.max || (range.max === '200000000' && maxPrice === '200000000'));
+                                        return (
+                                            <button 
+                                                key={idx}
+                                                onClick={() => {
+                                                    setMinPrice(range.min);
+                                                    setMaxPrice(range.max);
+                                                    setCurrentPage(1);
+                                                }}
+                                                className={`px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${isSelected ? 'bg-primary text-white border-primary shadow-md' : 'bg-surface-container-low text-on-surface border-outline-variant/30 hover:bg-surface-container-high'}`}
+                                            >
+                                                {range.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                
+                                {/* Manual Input */}
+                                <div className="space-y-3 pt-4 border-t border-outline-variant/10">
+                                    <p className="text-[10px] font-bold text-outline-variant uppercase tracking-tighter">Hoặc nhập thủ công</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative w-full">
+                                            <input 
+                                                type="number" 
+                                                placeholder="Từ" 
+                                                className="w-full bg-surface-container-low border-none rounded-lg pl-3 pr-8 py-2 text-xs focus:ring-1 focus:ring-primary h-10"
+                                                value={minPrice === '0' ? '' : minPrice}
+                                                onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                                            />
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-outline opacity-40">đ</span>
+                                        </div>
+                                        <span className="text-outline text-xs">-</span>
+                                        <div className="relative w-full">
+                                            <input 
+                                                type="number" 
+                                                placeholder="Đến" 
+                                                className="w-full bg-surface-container-low border-none rounded-lg pl-3 pr-8 py-2 text-xs focus:ring-1 focus:ring-primary h-10"
+                                                value={maxPrice === '200000000' ? '' : maxPrice}
+                                                onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                                            />
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-outline opacity-40">đ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-8 mt-4 border-t border-outline-variant/10">
+                            <button 
+                                onClick={handleClearFilters}
+                                className="w-full py-4 rounded-2xl bg-surface-container-highest text-on-surface font-black text-xs uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <span className="material-symbols-outlined text-lg group-hover:rotate-180 transition-transform duration-500">restart_alt</span>
+                                Xóa tất cả bộ lọc
+                            </button>
                         </div>
                     </div>
                 </aside>
@@ -323,14 +414,31 @@ const ProductList = () => {
                     )}
 
                     {/* Pagination */}
-                    {displayedProducts.length > 0 && (
+                    {totalPages > 1 && (
                         <div className="mt-20 flex justify-center items-center gap-2">
-                            <button className="w-10 h-10 rounded-full flex items-center justify-center text-outline-variant border border-outline-variant hover:border-primary hover:text-primary transition-all">
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-outline-variant border border-outline-variant hover:border-primary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
                                 <span className="material-symbols-outlined">chevron_left</span>
                             </button>
-                            <button className="w-10 h-10 rounded-full flex items-center justify-center bg-primary text-white font-bold">1</button>
-                            <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high font-bold">2</button>
-                            <button className="w-10 h-10 rounded-full flex items-center justify-center text-outline-variant border border-outline-variant hover:border-primary hover:text-primary transition-all">
+                            
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button 
+                                    key={i + 1}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${currentPage === i + 1 ? 'bg-primary text-white' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-outline-variant border border-outline-variant hover:border-primary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
                                 <span className="material-symbols-outlined">chevron_right</span>
                             </button>
                         </div>

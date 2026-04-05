@@ -16,6 +16,7 @@ const ProductDetail = () => {
     const [newRating, setNewRating] = useState(5);
     const [newComment, setNewComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -48,7 +49,28 @@ const ProductDetail = () => {
             }
         };
 
-        fetchProduct();
+        const fetchRelatedProducts = async (catId) => {
+            try {
+                const res = await api.get('/products');
+                // Filter products in the same category, excluding current product
+                const related = res.data.filter(p => (p.category_id?._id === catId || p.category_id === catId) && p._id !== id).slice(0, 4);
+                setRelatedProducts(related);
+            } catch (err) {
+                console.error('Error fetching related products:', err);
+            }
+        };
+
+        const loadData = async () => {
+            try {
+                const res = await api.get(`/products/${id}`);
+                setProduct(res.data);
+                fetchRelatedProducts(res.data.category_id?._id || res.data.category_id);
+            } catch (_err) {
+                setError('Không thể lấy thông tin sản phẩm');
+            }
+        };
+
+        loadData();
         fetchReviews();
         fetchWishlistStatus();
     }, [id]);
@@ -469,6 +491,33 @@ const ProductDetail = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Related Products Section */}
+            {relatedProducts.length > 0 && (
+                <section className="border-t border-outline-variant/30 pt-16 pb-24">
+                    <div className="flex justify-between items-center mb-10">
+                        <h2 className="text-3xl font-black text-on-surface">Sản phẩm liên quan</h2>
+                        <Link to="/products" className="text-primary font-bold text-sm hover:underline flex items-center gap-1">
+                            Xem tất cả <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {relatedProducts.map((p) => (
+                            <Link key={p._id} to={`/products/${p._id}`} className="group block">
+                                <div className="aspect-[4/5] bg-surface-container-lowest rounded-2xl overflow-hidden mb-4 ring-1 ring-outline-variant/10 group-hover:shadow-xl transition-all duration-500">
+                                    <img 
+                                        src={p.images?.[0] || 'https://via.placeholder.com/300'} 
+                                        alt={p.name} 
+                                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 p-4"
+                                    />
+                                </div>
+                                <h3 className="font-bold text-on-surface truncate group-hover:text-primary transition-colors">{p.name}</h3>
+                                <p className="text-primary font-black mt-1">{p.price.toLocaleString()} VNĐ</p>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
         </main>
     );
 };

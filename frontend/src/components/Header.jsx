@@ -11,10 +11,7 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [searchText, setSearchText] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [productIndex, setProductIndex] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const searchRef = useRef(null);
@@ -162,6 +159,13 @@ export default function Header() {
     window.setTimeout(() => navigate('/login'), 600);
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
     <>
       {notice && (
@@ -236,83 +240,16 @@ export default function Header() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div ref={searchRef} className="relative hidden sm:block">
+          <form onSubmit={handleSearch} className="relative hidden sm:block">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-            <input
-              className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64"
-              placeholder="Tìm kiếm sản phẩm..."
-              type="text"
-              value={searchText}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => setSearchOpen(true)}
-              onKeyDown={handleSearchKeyDown}
+            <input 
+              className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" 
+              placeholder="Tìm kiếm sản phẩm..." 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-
-            {searchOpen && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-2xl shadow-2xl overflow-hidden z-[80]">
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => goSearch(searchText)}
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3"
-                >
-                  <span className="material-symbols-outlined text-slate-500 text-lg">search</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-on-surface truncate">
-                      {searchText.trim() ? `Tìm “${searchText.trim()}”` : 'Nhập từ khoá để tìm kiếm'}
-                    </div>
-                    <div className="text-xs text-on-surface-variant truncate">
-                      {searchText.trim() ? 'Xem tất cả kết quả trong cửa hàng' : 'Gợi ý theo tên sản phẩm, thương hiệu, danh mục'}
-                    </div>
-                  </div>
-                </button>
-
-                <div className="border-t border-outline-variant/10" />
-
-                {searchLoading && (
-                  <div className="px-4 py-4 text-sm text-on-surface-variant">Đang tải gợi ý...</div>
-                )}
-
-                {!searchLoading && queryText && suggestions.length === 0 && (
-                  <div className="px-4 py-4 text-sm text-on-surface-variant">Không tìm thấy gợi ý phù hợp</div>
-                )}
-
-                {!searchLoading && suggestions.length > 0 && (
-                  <div className="max-h-[360px] overflow-auto">
-                    {suggestions.map((p) => (
-                      <button
-                        key={p._id}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          navigate(`/products/${p._id}`);
-                          setSearchOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3"
-                      >
-                        {p.image ? (
-                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover border border-outline-variant/20" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center border border-outline-variant/20">
-                            <span className="material-symbols-outlined text-slate-500">image</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-black text-on-surface truncate">{p.name}</div>
-                          <div className="text-xs text-on-surface-variant truncate">
-                            {(p.brandName || 'N/A')}{p.categoryName ? ` • ${p.categoryName}` : ''}
-                          </div>
-                        </div>
-                        <div className="text-sm font-black text-on-surface whitespace-nowrap">
-                          {(p.price || 0).toLocaleString('vi-VN')} ₫
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          </form>
           {user && (
             <Link to="/orders" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95" title="Lịch sử đơn hàng">
               <span className="material-symbols-outlined">receipt_long</span>

@@ -9,6 +9,7 @@ const Cart = () => {
     const [notice, setNotice] = useState(null);
     const [removeConfirmItemId, setRemoveConfirmItemId] = useState(null);
     const [shippingAddress, setShippingAddress] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const navigate = useNavigate();
     const location = useLocation();
@@ -94,6 +95,7 @@ const Cart = () => {
         try {
             await api.post('/orders', {
                 shipping_address: shippingAddress,
+                phone_number: phoneNumber,
                 payment_method: paymentMethod
             });
             navigate('/orders', { state: { notice: { type: 'success', text: 'Đặt hàng thành công!' } } }); 
@@ -244,6 +246,17 @@ const Cart = () => {
                                         value={shippingAddress}
                                         onChange={(e) => setShippingAddress(e.target.value)}
                                     ></textarea>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-on-surface mb-2 tracking-widest uppercase">Số điện thoại nhận hàng</label>
+                                    <input 
+                                        type="tel"
+                                        className="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary" 
+                                        placeholder="Nhập số điện thoại của bạn" 
+                                        required
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                    />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-bold text-on-surface mb-4 tracking-widest uppercase">Phương Thức Thanh Toán</label>

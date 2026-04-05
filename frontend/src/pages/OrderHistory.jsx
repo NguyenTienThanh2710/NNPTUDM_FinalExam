@@ -36,6 +36,19 @@ const OrderHistory = () => {
         fetchOrders();
     }, []);
 
+    const handleCancelOrder = async (orderId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+        try {
+            await api.put(`/orders/${orderId}/cancel`);
+            setNotice({ type: 'success', text: 'Đã hủy đơn hàng thành công' });
+            // Refresh orders
+            const res = await api.get('/orders');
+            setOrders(res.data);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Hủy đơn hàng thất bại' });
+        }
+    };
+
     useEffect(() => {
         const incoming = location.state?.notice;
         if (!incoming) return;
@@ -182,6 +195,15 @@ const OrderHistory = () => {
                                         Xem chi tiết
                                         <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
                                     </Link>
+                                    {order.status === 'pending' && (
+                                        <button 
+                                            onClick={() => handleCancelOrder(order._id)}
+                                            className="text-red-600 hover:text-red-700 font-bold text-sm flex items-center justify-center gap-1 mt-1 transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-base">cancel</span>
+                                            Hủy đơn
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );

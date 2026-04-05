@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getUsers, googleLogin, getProfile, updateProfile } = require('../controllers/auth.controller');
+const { register, login, getUsers, googleLogin, getProfile, updateProfile, changePassword } = require('../controllers/auth.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
 // @route   POST api/auth/register
@@ -22,6 +22,8 @@ router.post('/google-login', googleLogin);
 router.route('/profile')
     .get(protect, getProfile)
     .put(protect, updateProfile);
+
+router.put('/profile/password', protect, changePassword);
 
 // @route   GET api/auth/users
 // @desc    Get all users
