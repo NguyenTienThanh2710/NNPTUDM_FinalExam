@@ -12,6 +12,7 @@ const Cart = () => {
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const navigate = useNavigate();
     const location = useLocation();
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
         const incoming = location.state?.notice;
@@ -40,6 +41,24 @@ const Cart = () => {
     useEffect(() => {
         fetchCart();
     }, []);
+    useEffect(() => {
+    const fetchUser = async () => {
+        try {
+            const res = await api.get('/auth/profile');
+
+            setUser(res.data);
+
+            // ✅ AUTO FILL ĐỊA CHỈ
+            if (res.data.address) {
+                setShippingAddress(res.data.address);
+            }
+        } catch (err) {
+            console.error('Lỗi lấy profile:', err);
+        }
+    };
+
+    fetchUser();
+}, []);
 
     const handleUpdateQuantity = async (id, newQuantity) => {
         if (newQuantity < 1) return;
