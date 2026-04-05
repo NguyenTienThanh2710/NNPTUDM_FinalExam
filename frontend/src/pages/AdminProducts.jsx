@@ -352,15 +352,20 @@ const AdminProducts = () => {
                                             <p className={`text-sm ${product.stock > 0 ? 'font-medium' : 'font-bold text-error'}`}>{product.stock}</p>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            {product.stock > 0 ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                    Còn hàng
-                                                </span>
-                                            ) : (
+                                            {product.stock <= 0 ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-error-container text-error">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-error"></span>
                                                     Hết hàng
+                                                </span>
+                                            ) : product.stock <= 10 ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                                                    Sắp hết hàng
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Còn hàng
                                                 </span>
                                             )}
                                         </td>

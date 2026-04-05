@@ -28,7 +28,7 @@ const Register = () => {
         }
 
         try {
-            await api.post('/auth/register', { name, email, password });
+            await api.post('/auth/register', { name, email, password, phone });
             navigate('/login');
         } catch (err) {
             setError(err.response?.data?.msg || 'Đã có lỗi xảy ra');

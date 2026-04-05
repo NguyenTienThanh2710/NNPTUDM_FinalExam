@@ -22,6 +22,7 @@ const orderRoutes = require('./src/routes/order.route');
 const wishlistRoutes = require('./src/routes/wishlist.route');
 const adminRoutes = require('./src/routes/admin.route');
 const reviewRoutes = require('./src/routes/review.route');
+const locationRoutes = require('./src/routes/location.route');
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/locations', locationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -112,6 +114,17 @@ const start = async () => {
 
         await mongoose.connect(mongoUri);
         console.log('MongoDB Connected...');
+
+        // Auto-seed if in Memory Mode and DB is empty
+        if (!process.env.MONGO_URI) {
+            const Product = require('./src/models/product.model');
+            const count = await Product.countDocuments();
+            if (count === 0) {
+                console.log('Database is empty, starting auto-seeding...');
+                const seedData = require('./seed_extended');
+                await seedData(mongoUri);
+            }
+        }
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
