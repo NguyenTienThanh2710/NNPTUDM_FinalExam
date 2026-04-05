@@ -13,6 +13,7 @@ import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import CategoryList from './pages/CategoryList';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
 import Wishlist from './pages/Wishlist';
@@ -22,7 +23,6 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminOrders from './pages/AdminOrders';
 import AdminCustomers from './pages/AdminCustomers';
-import AdminStatistics from './pages/AdminStatistics';
 import AdminProducts from './pages/AdminProducts';
 import AdminCategories from './pages/AdminCategories';
 import AdminBrands from './pages/AdminBrands';
@@ -53,6 +53,7 @@ const AppContent = () => {
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/categories" element={<CategoryList />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<OrderHistory />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
@@ -66,7 +67,6 @@ const AppContent = () => {
           <Route path="/admin/reviews" element={<ProtectedRoute requireAdmin={true}><AdminReviews /></ProtectedRoute>} />
           <Route path="/admin/orders" element={<ProtectedRoute requireAdmin={true}><AdminOrders /></ProtectedRoute>} />
           <Route path="/admin/customers" element={<ProtectedRoute requireAdmin={true}><AdminCustomers /></ProtectedRoute>} />
-          <Route path="/admin/statistics" element={<ProtectedRoute requireAdmin={true}><AdminStatistics /></ProtectedRoute>} />
           <Route path="/admin/statistics/wishlist" element={<ProtectedRoute requireAdmin={true}><AdminWishlistStats /></ProtectedRoute>} />
         </Routes>
       </div>

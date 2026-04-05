@@ -10,7 +10,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // @route   POST /api/auth/register
 // @access  Public
 const register = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body;
 
     try {
         // Check if user exists
@@ -31,6 +31,7 @@ const register = async (req, res) => {
             name,
             email,
             password,
+            phone,
             role_id: userRole._id
         });
 
@@ -85,7 +86,7 @@ const login = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ msg: 'Thông tin đăng nhập không đúng' });
         }
-        
+
         // Check if account is active
         if (user.status === 'locked') {
             return res.status(403).json({ msg: 'Tài khoản của bạn đã bị khóa, vui lòng liên hệ admin để mở khóa' });
@@ -104,7 +105,7 @@ const login = async (req, res) => {
             process.env.JWT_SECRET, // We will need to set this up later
             { expiresIn: '5h' },
             (err, token) => {
-                res.json({ 
+                res.json({
                     token,
                     user: {
                         id: user.id,
@@ -244,7 +245,7 @@ const googleLogin = async (req, res) => {
 
             // Create new user (random password since they login via Google)
             const passwordHash = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
-            
+
             user = new User({
                 name,
                 email,
@@ -277,7 +278,7 @@ const googleLogin = async (req, res) => {
             { expiresIn: '5h' },
             (err, token) => {
                 if (err) throw err;
-                res.json({ 
+                res.json({
                     token,
                     user: {
                         id: user.id,

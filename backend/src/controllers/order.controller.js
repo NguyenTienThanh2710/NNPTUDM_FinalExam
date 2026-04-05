@@ -13,20 +13,31 @@ const OrderStatusHistory = require('../models/orderStatusHistory.model');
 // @access  Private
 const createOrder = async (req, res) => {
     try {
+        const { city, district, ward, street_address, phone_number, payment_method, item_ids } = req.body;
+
         const cart = await Cart.findOne({ user_id: req.user.id });
 
         if (!cart) {
             return res.status(400).json({ message: 'Không tìm thấy giỏ hàng của người dùng' });
         }
 
-        const cartItems = await CartItem.find({ cart_id: cart._id }).populate('product_id');
-
-        if (cartItems.length === 0) {
-            return res.status(400).json({ message: 'Giỏ hàng đang trống' });
+        // Fetch only selected items if item_ids is provided, otherwise fetch all
+        let query = { cart_id: cart._id };
+        if (item_ids && Array.isArray(item_ids) && item_ids.length > 0) {
+            query._id = { $in: item_ids };
         }
 
-        // Check stock for all items
+        const cartItems = await CartItem.find(query).populate('product_id');
+
+        if (cartItems.length === 0) {
+            return res.status(400).json({ message: 'Không có sản phẩm nào được chọn để thanh toán' });
+        }
+
+        // Check stock for selected items
         for (const item of cartItems) {
+            if (!item.product_id) {
+                return res.status(400).json({ message: 'Sản phẩm không tồn tại' });
+            }
             if (item.product_id.stock < item.quantity) {
                 return res.status(400).json({ 
                     message: `Sản phẩm ${item.product_id.name} đã hết hàng hoặc không đủ tồn kho (Còn: ${item.product_id.stock})` 
@@ -34,14 +45,13 @@ const createOrder = async (req, res) => {
             }
         }
 
-        // Calculate total price
+        // Calculate total price for selected items
         const totalPrice = cartItems.reduce((total, item) => {
             return total + (item.product_id.price * item.quantity);
         }, 0);
 
-        const { shipping_address, phone_number, payment_method } = req.body;
-        if (!shipping_address) {
-            return res.status(400).json({ message: 'Vui lòng cung cấp địa chỉ giao hàng' });
+        if (!city || !district || !ward || !street_address) {
+            return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin địa chỉ giao hàng' });
         }
         if (!phone_number) {
             return res.status(400).json({ message: 'Vui lòng cung cấp số điện thoại nhận hàng' });
@@ -56,7 +66,10 @@ const createOrder = async (req, res) => {
         const order = new Order({
             user_id: req.user.id,
             total_price: totalPrice,
-            shipping_address,
+            city,
+            district,
+            ward,
+            street_address,
             phone_number,
             payment_method: payment_method || 'COD',
             payment_status: 'pending',
@@ -65,9 +78,8 @@ const createOrder = async (req, res) => {
 
         const createdOrder = await order.save();
 
-        // Create order items and update stock
+        // Create order items and update stock for selected items
         for (const item of cartItems) {
-             // Subtract stock using atomic operation and validation
              const updatedProduct = await Product.findOneAndUpdate(
                  { _id: item.product_id._id, stock: { $gte: item.quantity } },
                  { $inc: { stock: -item.quantity } },
@@ -75,8 +87,6 @@ const createOrder = async (req, res) => {
              );
 
              if (!updatedProduct) {
-                 // This shouldn't normally happen because we checked stock above, 
-                 // but in case of race conditions, we handle it here.
                  throw new Error(`Sản phẩm ${item.product_id.name} vừa hết hàng.`);
              }
 
@@ -88,8 +98,8 @@ const createOrder = async (req, res) => {
              });
         }
 
-        // Clear cart after order creation
-        await CartItem.deleteMany({ cart_id: cart._id });
+        // Clear only selected items from cart
+        await CartItem.deleteMany({ _id: { $in: cartItems.map(i => i._id) } });
 
         // Log initial order status
         await OrderStatusHistory.create({
@@ -98,7 +108,7 @@ const createOrder = async (req, res) => {
             status_type: 'order',
             old_value: 'none',
             new_value: 'pending',
-            note: 'Đơn hàng được khởi tạo'
+            note: 'Đơn hàng được khởi tạo qua thanh toán từng phần'
         });
 
         res.status(201).json(createdOrder);
@@ -252,14 +262,18 @@ const updateOrderStatus = async (req, res) => {
 const getDashboardStats = async (req, res) => {
     try {
         const now = new Date();
-        // Robust start of today calculation (handles local vs UTC better)
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        startOfToday.setHours(0, 0, 0, 0);
+        const VN_OFFSET = 7 * 60 * 60 * 1000; // GMT+7
+        
+        // Calculate start of today in Vietnam (GMT+7)
+        const nowVN = new Date(Date.now() + VN_OFFSET);
+        const startOfTodayVN = new Date(nowVN.getUTCFullYear(), nowVN.getUTCMonth(), nowVN.getUTCDate());
+        startOfTodayVN.setUTCHours(0, 0, 0, 0);
+        const startOfTodayUTC = new Date(startOfTodayVN.getTime() - VN_OFFSET);
 
         const revenueTodayAgg = await Order.aggregate([
             { 
                 $match: { 
-                    created_at: { $gte: startOfToday }, 
+                    created_at: { $gte: startOfTodayUTC }, 
                     status: { $ne: 'cancelled' } 
                 } 
             },
@@ -277,13 +291,24 @@ const getDashboardStats = async (req, res) => {
 
         const totalOrders = await Order.countDocuments({});
 
-        const lowStockThreshold = 5;
+        const lowStockThreshold = 10;
         const lowStockCount = await Product.countDocuments({ stock: { $lte: lowStockThreshold } });
 
         const userRole = await Role.findOne({ name: 'USER' }).select('_id');
         const activeCustomers = userRole
             ? await User.countDocuments({ status: 'active', role_id: userRole._id })
             : await User.countDocuments({ status: 'active' });
+
+        // FETCH REAL AVATARS FOR RECENT ACTIVE USERS
+        const recentActiveUsers = userRole 
+            ? await User.find({ status: 'active', role_id: userRole._id })
+                .sort({ createdAt: -1 })
+                .limit(4)
+                .select('name avatar')
+            : await User.find({ status: 'active' })
+                .sort({ createdAt: -1 })
+                .limit(4)
+                .select('name avatar');
 
         const startMonth = new Date(now.getFullYear(), now.getMonth() - 5, 1);
         const monthlyRevenueAgg = await Order.aggregate([
@@ -341,6 +366,7 @@ const getDashboardStats = async (req, res) => {
             lowStockCount,
             lowStockThreshold,
             activeCustomers,
+            recentActiveUsers,
             monthlyRevenue,
             productDistribution,
             totalProducts,

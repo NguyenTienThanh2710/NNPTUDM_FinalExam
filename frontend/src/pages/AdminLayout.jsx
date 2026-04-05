@@ -10,7 +10,6 @@ const menuItems = [
     { to: '/admin/reviews', label: 'Đánh giá', icon: 'rate_review' },
     { to: '/admin/orders', label: 'Đơn hàng', icon: 'local_shipping' },
     { to: '/admin/customers', label: 'Khách hàng', icon: 'group' },
-    { to: '/admin/statistics', label: 'Thống kê', icon: 'analytics' },
 ];
 
 const AdminLayout = ({ title, subtitle, actions, children }) => {

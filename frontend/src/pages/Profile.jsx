@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { getImageURL } from '../utils/imageUtils';
 
 const Profile = () => {
     const [user, setUser] = useState(() => {
@@ -14,7 +15,6 @@ const Profile = () => {
         return {
             name: parsed?.name || '',
             phone: parsed?.phone || '',
-            address: parsed?.address || '',
             avatar: parsed?.avatar || ''
         };
     });
@@ -31,7 +31,6 @@ const Profile = () => {
                 setFormData({
                     name: res.data.name,
                     phone: res.data.phone || '',
-                    address: res.data.address || '',
                     avatar: res.data.avatar || ''
                 });
                 setLoading(false);
@@ -97,7 +96,7 @@ const Profile = () => {
                     <div className="absolute -bottom-16 left-12">
                         <div className="relative group">
                             <img 
-                                src={user.avatar || 'https://i.pravatar.cc/150?img=12'} 
+                                src={getImageURL(user.avatar) || 'https://i.pravatar.cc/150?img=12'} 
                                 alt={user.name} 
                                 className="w-32 h-32 rounded-3xl border-4 border-white dark:border-slate-800 object-cover shadow-lg"
                             />
@@ -178,32 +177,14 @@ const Profile = () => {
                             />
                         </div>
                         <div className="space-y-2">
-    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">
-        Địa chỉ
-    </label>
-    <input 
-        type="text"
-        name="address"
-        placeholder="Chưa cập nhật"
-        value={isEditing ? formData.address : (user.address || '')}
-        onChange={handleChange}
-        readOnly={!isEditing}
-        className={`w-full px-6 py-4 rounded-2xl border-none transition-all ${
-            isEditing 
-                ? 'bg-surface-container focus:ring-2 focus:ring-primary' 
-                : 'bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed'
-        }`}
-    />
-</div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Avatar URL (Link ảnh)</label>
+                            <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Avatar URL (Link kiểu .jpg, .png)</label>
                             <input 
                                 type="text"
                                 name="avatar"
-                                value={isEditing ? formData.avatar : user.avatar}
+                                value={isEditing ? formData.avatar : (user.avatar || '')}
                                 onChange={handleChange}
                                 readOnly={!isEditing}
-                                placeholder="Paste image URL here"
+                                placeholder="Dán link ảnh trực tiếp vào đây"
                                 className={`w-full px-6 py-4 rounded-2xl border-none transition-all ${isEditing ? 'bg-surface-container focus:ring-2 focus:ring-primary' : 'bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed'}`}
                             />
                         </div>

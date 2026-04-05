@@ -11,7 +11,19 @@ const OrderSchema = new Schema({
         type: Number,
         required: true
     },
-    shipping_address: {
+    city: {
+        type: String,
+        required: true
+    },
+    district: {
+        type: String,
+        required: true
+    },
+    ward: {
+        type: String,
+        required: true
+    },
+    street_address: {
         type: String,
         required: true
     },
