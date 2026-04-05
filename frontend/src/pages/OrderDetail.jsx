@@ -238,7 +238,10 @@ const OrderDetail = () => {
                             </div>
                             <div className="md:col-span-2">
                                 <p className="text-xs font-bold text-outline uppercase tracking-widest mb-1">Địa chỉ</p>
-                                <p className="text-on-surface leading-relaxed text-lg font-medium">{order.shipping_address}</p>
+                                <p className="text-on-surface leading-relaxed text-lg font-medium">
+                                    {order.shipping_address || 
+                                     `${order.street_address}, ${order.ward}, ${order.district}, ${order.city}`}
+                                </p>
                             </div>
                         </div>
                     </div>

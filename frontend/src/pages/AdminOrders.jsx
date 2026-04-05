@@ -499,7 +499,12 @@ const AdminOrders = () => {
                                                 </div>
                                                 <div className="md:col-span-2">
                                                     <div className="text-xs font-bold text-secondary uppercase tracking-widest">Địa chỉ giao hàng</div>
-                                                    <div className="font-semibold text-on-surface">{detailData.order.shipping_address || 'Chưa cung cấp'}</div>
+                                                    <div className="font-semibold text-on-surface">
+                                                        {detailData.order.shipping_address || 
+                                                         (detailData.order.city 
+                                                            ? `${detailData.order.street_address}, ${detailData.order.ward}, ${detailData.order.district}, ${detailData.order.city}` 
+                                                            : 'Chưa cung cấp')}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <div className="text-xs font-bold text-secondary uppercase tracking-widest">Phương thức thanh toán</div>

@@ -43,6 +43,10 @@ const protect = async (req, res, next) => {
             // Get user from the token and populate role
             req.user = await User.findById(decoded.user.id).select('-password').populate('role_id');
 
+            if (!req.user) {
+                return res.status(401).json({ message: 'Người dùng không tồn tại' });
+            }
+
             next();
         } catch (error) {
             console.error(error);
