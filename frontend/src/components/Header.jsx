@@ -10,6 +10,7 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +51,13 @@ export default function Header() {
     setIsLogoutConfirmOpen(false);
     setNotice({ type: 'success', text: 'Đăng xuất thành công' });
     window.setTimeout(() => navigate('/login'), 600);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   return (
@@ -126,10 +134,16 @@ export default function Header() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative hidden sm:block">
+          <form onSubmit={handleSearch} className="relative hidden sm:block">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-            <input className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Tìm kiếm sản phẩm..." type="text" />
-          </div>
+            <input 
+              className="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary w-64" 
+              placeholder="Tìm kiếm sản phẩm..." 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
           {user && (
             <Link to="/orders" className="text-slate-600 dark:text-slate-400 transition-all duration-300 hover:opacity-80 active:scale-95" title="Lịch sử đơn hàng">
               <span className="material-symbols-outlined">receipt_long</span>

@@ -8,6 +8,8 @@ const OrderDetail = () => {
     const [orderData, setOrderData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState(null);
+    const [cancelling, setCancelling] = useState(false);
 
     const mapStatus = (status) => {
         const mapping = {
@@ -50,6 +52,28 @@ const OrderDetail = () => {
         };
         fetchOrderDetail();
     }, [id]);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeoutId = window.setTimeout(() => setNotice(null), 3000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
+
+    const handleCancelOrder = async () => {
+        if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+        setCancelling(true);
+        try {
+            await api.put(`/orders/${id}/cancel`);
+            setNotice({ type: 'success', text: 'Đã hủy đơn hàng thành công' });
+            // Refresh order
+            const res = await api.get(`/orders/${id}`);
+            setOrderData(res.data);
+        } catch (err) {
+            setNotice({ type: 'error', text: err.response?.data?.message || 'Hủy đơn hàng thất bại' });
+        } finally {
+            setCancelling(false);
+        }
+    };
 
     if (loading) return (
         <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen flex items-center justify-center">
@@ -95,6 +119,21 @@ const OrderDetail = () => {
                 </div>
                 <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface">Chi tiết đơn hàng #{order._id.slice(-6).toUpperCase()}</h1>
                 <p className="mt-2 text-outline">Ngày đặt: {new Date(order.created_at).toLocaleString('vi-VN')}</p>
+                {notice && (
+                    <div className={`mt-6 rounded-xl px-4 py-3 border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>
+                        <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-lg">
+                                {notice.type === 'success' ? 'check_circle' : notice.type === 'error' ? 'error' : 'info'}
+                            </span>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold leading-snug">{notice.text}</p>
+                            </div>
+                            <button type="button" onClick={() => setNotice(null)} className="ml-auto text-on-surface-variant hover:opacity-80">
+                                <span className="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Stepper Progress */}
@@ -193,6 +232,10 @@ const OrderDetail = () => {
                                 <p className="text-xs font-bold text-outline uppercase tracking-widest mb-1">Email</p>
                                 <p className="text-on-surface font-semibold text-lg">{order.user_id?.email || 'N/A'}</p>
                             </div>
+                            <div>
+                                <p className="text-xs font-bold text-outline uppercase tracking-widest mb-1">Số điện thoại</p>
+                                <p className="text-on-surface font-semibold text-lg">{order.phone_number || 'N/A'}</p>
+                            </div>
                             <div className="md:col-span-2">
                                 <p className="text-xs font-bold text-outline uppercase tracking-widest mb-1">Địa chỉ</p>
                                 <p className="text-on-surface leading-relaxed text-lg font-medium">{order.shipping_address}</p>
@@ -256,6 +299,16 @@ const OrderDetail = () => {
                             <span className="material-symbols-outlined">refresh</span>
                             Mua thêm sản phẩm
                         </button>
+                        {!isCancelled && order.status === 'pending' && (
+                            <button 
+                                onClick={handleCancelOrder}
+                                disabled={cancelling}
+                                className="flex items-center gap-2 px-8 py-4 bg-white border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                <span className="material-symbols-outlined text-xl">cancel</span>
+                                {cancelling ? 'Đang xử lý...' : 'Hủy đơn hàng'}
+                            </button>
+                        )}
                     </div>
                 </div>
 

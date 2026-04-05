@@ -18,6 +18,9 @@ const Profile = () => {
         };
     });
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [passwordData, setPasswordData] = useState({ old_password: '', new_password: '', confirm_password: '' });
+    const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -58,6 +61,27 @@ const Profile = () => {
         }
     };
 
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+        if (passwordData.new_password !== passwordData.confirm_password) {
+            setPasswordMessage({ type: 'error', text: 'Mật khẩu mới không khớp' });
+            return;
+        }
+        try {
+            const res = await api.put('/auth/profile/password', {
+                old_password: passwordData.old_password,
+                new_password: passwordData.new_password
+            });
+            if (res.data.success) {
+                setPasswordMessage({ type: 'success', text: 'Đổi mật khẩu thành công!' });
+                setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+                window.setTimeout(() => setIsPasswordModalOpen(false), 2000);
+            }
+        } catch (err) {
+            setPasswordMessage({ type: 'error', text: err.response?.data?.msg || 'Đổi mật khẩu thất bại' });
+        }
+    };
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -66,7 +90,7 @@ const Profile = () => {
 
     return (
         <main className="max-w-4xl mx-auto px-6 py-24 min-h-screen">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
                 <div className="bg-gradient-to-r from-primary to-primary-container p-8 h-48 relative">
                     <div className="absolute -bottom-16 left-12">
                         <div className="relative group">
@@ -172,8 +196,85 @@ const Profile = () => {
                             </div>
                         )}
                     </form>
+
+                    <div className="mt-16 pt-12 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 rounded-3xl bg-surface-container-low border border-outline-variant/10">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600">
+                                    <span className="material-symbols-outlined text-4xl">lock_reset</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-on-surface">Bảo mật tài khoản</h3>
+                                    <p className="text-sm text-on-surface-variant font-medium mt-1">Nên cập nhật mật khẩu định kỳ để bảo vệ tài khoản.</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setIsPasswordModalOpen(true)}
+                                className="w-full md:w-auto px-8 py-4 bg-on-surface text-surface rounded-2xl font-black hover:opacity-90 transition-all active:scale-95"
+                            >
+                                Đổi mật khẩu ngay
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {isPasswordModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPasswordModalOpen(false)} />
+                    <div className="relative w-full max-w-md rounded-[32px] bg-white dark:bg-slate-900 border border-outline-variant/20 shadow-2xl overflow-hidden p-10">
+                        <div className="flex justify-between items-center mb-10">
+                            <h2 className="text-3xl font-black tracking-tight">Đổi mật khẩu</h2>
+                            <button onClick={() => setIsPasswordModalOpen(false)} className="text-outline-variant hover:text-on-surface">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        {passwordMessage.text && (
+                            <div className={`mb-8 p-4 rounded-xl text-sm font-bold flex items-center gap-2 ${passwordMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                <span className="material-symbols-outlined text-sm">{passwordMessage.type === 'success' ? 'check_circle' : 'error'}</span>
+                                {passwordMessage.text}
+                            </div>
+                        )}
+
+                        <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Mật khẩu cũ</label>
+                                <input 
+                                    type="password"
+                                    required
+                                    className="w-full px-6 py-4 rounded-2xl bg-surface-container border-none focus:ring-2 focus:ring-primary"
+                                    value={passwordData.old_password}
+                                    onChange={(e) => setPasswordData({...passwordData, old_password: e.target.value})}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Mật khẩu mới</label>
+                                <input 
+                                    type="password"
+                                    required
+                                    className="w-full px-6 py-4 rounded-2xl bg-surface-container border-none focus:ring-2 focus:ring-primary"
+                                    value={passwordData.new_password}
+                                    onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Nhập lại mật khẩu mới</label>
+                                <input 
+                                    type="password"
+                                    required
+                                    className="w-full px-6 py-4 rounded-2xl bg-surface-container border-none focus:ring-2 focus:ring-primary"
+                                    value={passwordData.confirm_password}
+                                    onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95 mt-4">
+                                Xác nhận thay đổi
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </main>
     );
 };

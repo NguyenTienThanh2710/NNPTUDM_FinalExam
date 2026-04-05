@@ -30,9 +30,12 @@ const createOrder = async (req, res) => {
             return total + (item.product_id.price * item.quantity);
         }, 0);
 
-        const { shipping_address, payment_method } = req.body;
+        const { shipping_address, phone_number, payment_method } = req.body;
         if (!shipping_address) {
             return res.status(400).json({ message: 'Vui lòng cung cấp địa chỉ giao hàng' });
+        }
+        if (!phone_number) {
+            return res.status(400).json({ message: 'Vui lòng cung cấp số điện thoại nhận hàng' });
         }
 
         const allowedPaymentMethods = ['COD', 'BANK_TRANSFER'];
@@ -45,6 +48,7 @@ const createOrder = async (req, res) => {
             user_id: req.user.id,
             total_price: totalPrice,
             shipping_address,
+            phone_number,
             payment_method: payment_method || 'COD',
             payment_status: 'pending',
             status: 'pending'
@@ -350,6 +354,49 @@ const updatePaymentStatus = async (req, res) => {
     }
 };
 
+// @desc    Cancel order (User)
+// @route   PUT /api/orders/:id/cancel
+// @access  Private
+const cancelOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+
+        // Ensure user owns this order
+        const orderUserId = order.user_id?._id || order.user_id;
+        if (orderUserId.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Không có quyền thực hiện hành động này' });
+        }
+
+        // Only allow cancellation if order is PENDING
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng đang ở trạng thái chờ xử lý' });
+        }
+
+        const oldStatus = order.status;
+        const updatedOrder = await Order.findByIdAndUpdate(
+            order._id, 
+            { $set: { status: 'cancelled' } },
+            { new: true }
+        );
+
+        // Log the change
+        await OrderStatusHistory.create({
+            order_id: order._id,
+            changed_by: req.user.id,
+            status_type: 'order',
+            old_value: oldStatus,
+            new_value: 'cancelled',
+            note: 'Đơn hàng được người dùng hủy'
+        });
+
+        res.json(updatedOrder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
     createOrder,
     getOrders,
@@ -357,5 +404,6 @@ module.exports = {
     updateOrderStatus,
     updatePaymentStatus,
     getAllOrders,
-    getDashboardStats
+    getDashboardStats,
+    cancelOrder
 };
