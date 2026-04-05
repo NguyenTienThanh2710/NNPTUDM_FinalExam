@@ -16,6 +16,9 @@ const ProductDetail = () => {
     const [newRating, setNewRating] = useState(5);
     const [newComment, setNewComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [canReview, setCanReview] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
+    const [reviewStatus, setReviewStatus] = useState('');
     const [relatedProducts, setRelatedProducts] = useState([]);
 
     useEffect(() => {
@@ -49,6 +52,27 @@ const ProductDetail = () => {
             }
         };
 
+        const fetchReviewPermission = async () => {
+            const token = localStorage.getItem('token');
+            if (!token || token === 'null' || token === 'undefined') {
+                setCanReview(false);
+                setHasReviewed(false);
+                setReviewStatus('Vui lòng đăng nhập để đánh giá sản phẩm.');
+                return;
+            }
+
+            try {
+                const res = await api.get(`/reviews/can-review/${id}`);
+                setCanReview(res.data.canReview);
+                setHasReviewed(res.data.alreadyReviewed);
+                setReviewStatus(res.data.message);
+            } catch (err) {
+                console.error('Error checking review permission:', err);
+                setCanReview(false);
+                setReviewStatus(err.response?.data?.message || 'Không thể kiểm tra quyền đánh giá.');
+            }
+        };
+
         const fetchRelatedProducts = async (catId) => {
             try {
                 const res = await api.get('/products');
@@ -73,6 +97,7 @@ const ProductDetail = () => {
         loadData();
         fetchReviews();
         fetchWishlistStatus();
+        fetchReviewPermission();
     }, [id]);
 
     useEffect(() => {
@@ -134,6 +159,9 @@ const ProductDetail = () => {
             setNotice({ type: 'success', text: 'Đã gửi đánh giá của bạn!' });
             setNewRating(5);
             setNewComment('');
+            setCanReview(false);
+            setHasReviewed(true);
+            setReviewStatus('Bạn đã đánh giá sản phẩm này rồi.');
             
             // Re-fetch product and reviews to update the average rating
             const [prodRes, revRes] = await Promise.all([
@@ -386,41 +414,47 @@ const ProductDetail = () => {
                     <div className="lg:col-span-1">
                         <h2 className="text-2xl font-black text-on-surface mb-6">Đánh giá sản phẩm</h2>
                         {currentUser ? (
-                            <form onSubmit={handleSubmitReview} className="space-y-4 bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10">
-                                <div>
-                                    <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Xếp hạng</label>
-                                    <div className="flex gap-2">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
-                                                key={star}
-                                                type="button"
-                                                onClick={() => setNewRating(star)}
-                                                className={`material-symbols-outlined text-2xl transition-colors ${newRating >= star ? 'text-amber-400' : 'text-outline-variant'}`}
-                                                style={{ fontVariationSettings: `'FILL' ${newRating >= star ? 1 : 0}` }}
-                                            >
-                                                star
-                                            </button>
-                                        ))}
+                            canReview ? (
+                                <form onSubmit={handleSubmitReview} className="space-y-4 bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10">
+                                    <div>
+                                        <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Xếp hạng</label>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setNewRating(star)}
+                                                    className={`material-symbols-outlined text-2xl transition-colors ${newRating >= star ? 'text-amber-400' : 'text-outline-variant'}`}
+                                                    style={{ fontVariationSettings: `'FILL' ${newRating >= star ? 1 : 0}` }}
+                                                >
+                                                    star
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Bình luận</label>
+                                        <textarea
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            className="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary min-h-[120px]"
+                                            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                                            required
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={submittingReview}
+                                        className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    >
+                                        {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10 text-center">
+                                    <p className="text-sm text-secondary mb-4">Chỉ sau khi đơn hàng đang giao hoặc đã giao mới có thể đánh giá.</p>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-on-surface mb-2 uppercase tracking-wider">Bình luận</label>
-                                    <textarea
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        className="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary min-h-[120px]"
-                                        placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
-                                        required
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={submittingReview}
-                                    className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-                                >
-                                    {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
-                                </button>
-                            </form>
+                            )
                         ) : (
                             <div className="bg-surface-container-low p-6 rounded-2xl ring-1 ring-outline/10 text-center">
                                 <p className="text-sm text-secondary mb-4">Vui lòng đăng nhập để đánh giá sản phẩm.</p>

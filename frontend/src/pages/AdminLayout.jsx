@@ -6,6 +6,7 @@ const menuItems = [
     { to: '/admin/products', label: 'Sản phẩm', icon: 'inventory_2' },
     { to: '/admin/categories', label: 'Danh mục', icon: 'category' },
     { to: '/admin/brands', label: 'Thương hiệu', icon: 'branding_watermark' },
+    { to: '/admin/reviews', label: 'Đánh giá', icon: 'rate_review' },
     { to: '/admin/orders', label: 'Đơn hàng', icon: 'local_shipping' },
     { to: '/admin/customers', label: 'Khách hàng', icon: 'group' },
     { to: '/admin/statistics', label: 'Thống kê', icon: 'analytics' },

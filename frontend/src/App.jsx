@@ -25,6 +25,7 @@ import AdminStatistics from './pages/AdminStatistics';
 import AdminProducts from './pages/AdminProducts';
 import AdminCategories from './pages/AdminCategories';
 import AdminBrands from './pages/AdminBrands';
+import AdminReviews from './pages/AdminReviews';
 
 import ProtectedRoute from './components/ProtectedRoute'; // Ensure this matches User's additions
 
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/admin/products" element={<ProtectedRoute requireAdmin={true}><AdminProducts /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute requireAdmin={true}><AdminCategories /></ProtectedRoute>} />
             <Route path="/admin/brands" element={<ProtectedRoute requireAdmin={true}><AdminBrands /></ProtectedRoute>} />
+            <Route path="/admin/reviews" element={<ProtectedRoute requireAdmin={true}><AdminReviews /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute requireAdmin={true}><AdminOrders /></ProtectedRoute>} />
             <Route path="/admin/customers" element={<ProtectedRoute requireAdmin={true}><AdminCustomers /></ProtectedRoute>} />
             <Route path="/admin/statistics" element={<ProtectedRoute requireAdmin={true}><AdminStatistics /></ProtectedRoute>} />
