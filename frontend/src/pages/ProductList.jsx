@@ -139,12 +139,13 @@ const ProductList = () => {
             .trim();
     };
 
-    const queryText = normalizeText(searchParams.get('q'));
+    const queryText = normalizeText(searchParams.get('q') || '');
+    const searchTermFromOld = searchParams.get('search')?.toLowerCase() || '';
 
     const filteredProducts = products.filter((p) => {
-        const searchTerm = searchParams.get('search')?.toLowerCase() || '';
-        const isSearchMatch = !searchTerm || p.name.toLowerCase().includes(searchTerm
-
+        const pNameNormalized = normalizeText(p.name);
+        const isSearchMatch = (!queryText || pNameNormalized.includes(queryText)) && (!searchTermFromOld || p.name.toLowerCase().includes(searchTermFromOld));
+        
         const brandId = typeof p.brand_id === 'string' ? p.brand_id : p.brand_id?._id;
         const isBrandMatch = selectedBrandIds.length === 0 || (brandId && selectedBrandIds.includes(brandId));
 
