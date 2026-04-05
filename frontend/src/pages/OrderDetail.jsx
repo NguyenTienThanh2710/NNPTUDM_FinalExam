@@ -181,7 +181,7 @@ const OrderDetail = () => {
                                 <h2 className="text-xl font-bold tracking-tight">Lịch sử thay đổi</h2>
                             </div>
                             <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                                {orderData.history.map((log, index) => {
+                                {orderData.history.map((log) => {
                                     const isOrder = log.status_type === 'order';
                                     return (
                                         <div key={log._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">

@@ -232,6 +232,7 @@ const getProfile = async (req, res) => {
             role: user.role_id.name,
             avatar: user.avatar,
             phone: user.phone,
+            address: user.address,
             status: user.status
         });
     } catch (err) {
@@ -244,7 +245,7 @@ const getProfile = async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = async (req, res) => {
-    const { name, phone, avatar } = req.body;
+    const { name, phone, avatar, address } = req.body;
 
     try {
         const user = await User.findById(req.user.id);
@@ -254,8 +255,9 @@ const updateProfile = async (req, res) => {
 
         // Update fields
         if (name) user.name = name;
-        if (phone) user.phone = phone; // Assuming phone field exists or adding it
+        if (phone) user.phone = phone;
         if (avatar) user.avatar = avatar;
+        if (address) user.address = address;
 
         await user.save();
         const updatedUser = await User.findById(user.id).populate('role_id');
@@ -268,7 +270,8 @@ const updateProfile = async (req, res) => {
                 email: updatedUser.email,
                 role: updatedUser.role_id.name,
                 avatar: updatedUser.avatar,
-                phone: updatedUser.phone
+                phone: updatedUser.phone,
+                address: updatedUser.address
             }
         });
     } catch (err) {

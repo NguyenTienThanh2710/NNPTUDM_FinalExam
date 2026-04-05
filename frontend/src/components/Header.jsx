@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const navItems = [
   { to: '/', label: 'Trang chủ', end: true },
@@ -12,6 +13,19 @@ export default function Header() {
   const [notice, setNotice] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchRef = useRef(null);
+  const searchDebounceRef = useRef(null);
+
+  const normalizeText = (value) => {
+    return String(value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+
+  const queryText = useMemo(() => normalizeText(searchText), [searchText]);
 
   useEffect(() => {
     // Check for user login status on mount and when localStorage changes
@@ -42,6 +56,98 @@ export default function Header() {
     const timeoutId = window.setTimeout(() => setNotice(null), 3000);
     return () => window.clearTimeout(timeoutId);
   }, [notice]);
+
+  useEffect(() => {
+    const fetchIndex = async () => {
+      setSearchLoading(true);
+      try {
+        const res = await api.get('/products');
+        const list = Array.isArray(res.data) ? res.data : [];
+        setProductIndex(
+          list.map((p) => ({
+            _id: p._id,
+            name: p.name,
+            price: p.price,
+            image: Array.isArray(p.images) ? p.images[0] : undefined,
+            brandName: typeof p.brand_id === 'string' ? '' : p.brand_id?.name,
+            categoryName: typeof p.category_id === 'string' ? '' : p.category_id?.name
+          }))
+        );
+      } catch (_err) {
+        setProductIndex([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    fetchIndex();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!searchRef.current) return;
+      if (searchRef.current.contains(e.target)) return;
+      setSearchOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/products')) return;
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') || '';
+    setSearchText(q);
+  }, [location.pathname, location.search]);
+
+  const suggestions = useMemo(() => {
+    if (!queryText) return [];
+    const items = productIndex
+      .map((p) => {
+        const name = normalizeText(p.name);
+        const brandName = normalizeText(p.brandName);
+        const categoryName = normalizeText(p.categoryName);
+        const score =
+          (name.includes(queryText) ? 3 : 0) +
+          (brandName.includes(queryText) ? 2 : 0) +
+          (categoryName.includes(queryText) ? 1 : 0);
+        return { ...p, score };
+      })
+      .filter((p) => p.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    return items.slice(0, 6);
+  }, [productIndex, queryText]);
+
+  const goSearch = (q) => {
+    const trimmed = String(q || '').trim();
+    if (!trimmed) {
+      navigate('/products');
+      setSearchOpen(false);
+      return;
+    }
+    navigate(`/products?q=${encodeURIComponent(trimmed)}`);
+    setSearchOpen(false);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      goSearch(searchText);
+    }
+    if (e.key === 'Escape') {
+      setSearchOpen(false);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchText(value);
+    setSearchOpen(true);
+    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = window.setTimeout(() => {
+      setSearchOpen(true);
+    }, 120);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
