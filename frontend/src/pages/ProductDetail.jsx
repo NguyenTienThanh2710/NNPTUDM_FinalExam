@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import wishlistService from '../services/wishlist.service';
-import { getImageURL } from '../utils/imageUtils';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -253,7 +252,7 @@ const ProductDetail = () => {
                 <div className="space-y-6">
                     <div className="aspect-square bg-surface-container-low rounded-xl overflow-hidden flex items-center justify-center p-12 relative group ring-1 ring-outline/10">
                         {product.images && product.images.length > 0 ? (
-                            <img alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" src={getImageURL(product.images[0])} />
+                            <img alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" src={product.images[0]} />
                         ) : (
                             <div className="text-outline">Chưa có ảnh</div>
                         )}
@@ -262,7 +261,7 @@ const ProductDetail = () => {
                     <div className="grid grid-cols-4 gap-4">
                         {product.images && product.images.slice(0, 3).map((img, idx) => (
                             <button key={idx} className={`aspect-square bg-surface-container-low rounded-xl p-2 overflow-hidden ${idx === 0 ? 'border-2 border-primary' : 'hover:bg-surface-container transition-colors'}`}>
-                                <img className="w-full h-full object-contain" src={getImageURL(img)} alt={`Ảnh nhỏ ${idx + 1}`} />
+                                <img className="w-full h-full object-contain" src={img} alt={`Ảnh nhỏ ${idx + 1}`} />
                             </button>
                         ))}
                     </div>
@@ -532,7 +531,7 @@ const ProductDetail = () => {
                             <Link key={p._id} to={`/products/${p._id}`} className="group block">
                                 <div className="aspect-[4/5] bg-surface-container-lowest rounded-2xl overflow-hidden mb-4 ring-1 ring-outline-variant/10 group-hover:shadow-xl transition-all duration-500">
                                     <img 
-                                        src={getImageURL(p.images?.[0]) || 'https://via.placeholder.com/300'} 
+                                        src={p.images?.[0] || 'https://via.placeholder.com/300'} 
                                         alt={p.name} 
                                         className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 p-4"
                                     />

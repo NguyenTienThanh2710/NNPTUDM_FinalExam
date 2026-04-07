@@ -235,10 +235,28 @@ const AdminCustomers = () => {
             title="Quản lý Khách hàng"
             subtitle="Theo dõi lộ trình khách hàng và quản lý cấp độ thành viên"
             actions={
-                <button className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
-                    <span className="material-symbols-outlined text-lg">person_add</span>
-                    Thêm khách hàng
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('pdf')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">file_download</span>
+                        Xuất PDF
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('txt')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">description</span>
+                        Xuất TXT
+                    </button>
+                    <button className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
+                        <span className="material-symbols-outlined text-lg">person_add</span>
+                        Thêm khách hàng
+                    </button>
+                </div>
             }
         >
             {notice && (

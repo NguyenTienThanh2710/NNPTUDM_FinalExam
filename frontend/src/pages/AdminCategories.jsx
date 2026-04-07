@@ -9,7 +9,6 @@ const AdminCategories = () => {
     const [formDescription, setFormDescription] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [editingCategoryId, setEditingCategoryId] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [deleteConfirmCategoryId, setDeleteConfirmCategoryId] = useState(null);
     const [notice, setNotice] = useState(null);
     const formRef = useRef(null);
@@ -26,8 +25,6 @@ const AdminCategories = () => {
                 setStats(resStats.data);
             } catch (err) {
                 console.error(err);
-            } finally {
-                setLoading(false);
             }
         };
         fetchData();

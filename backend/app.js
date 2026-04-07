@@ -7,22 +7,21 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
-const { protect, admin } = require('./src/middleware/auth.middleware');
+const { protect, admin } = require('./utils/auth');
 
 // Load env vars
 dotenv.config({ quiet: true });
 
-// Route files
-const auth = require('./src/routes/auth.route');
-const brandRoutes = require('./src/routes/brand.route');
-const categoryRoutes = require('./src/routes/category.route');
-const productRoutes = require('./src/routes/product.route');
-const cartRoutes = require('./src/routes/cart.route');
-const orderRoutes = require('./src/routes/order.route');
-const wishlistRoutes = require('./src/routes/wishlist.route');
-const adminRoutes = require('./src/routes/admin.route');
-const reviewRoutes = require('./src/routes/review.route');
-const locationRoutes = require('./src/routes/location.route');
+const auth = require('./routes/auth');
+const brandRoutes = require('./routes/brands');
+const categoryRoutes = require('./routes/categories');
+const productRoutes = require('./routes/products');
+const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/orders');
+const wishlistRoutes = require('./routes/wishlist');
+const adminRoutes = require('./routes/admin');
+const reviewRoutes = require('./routes/reviews');
+const locationRoutes = require('./routes/locations');
 
 const app = express();
 
@@ -114,17 +113,6 @@ const start = async () => {
 
         await mongoose.connect(mongoUri);
         console.log('MongoDB Connected...');
-
-        // Auto-seed if in Memory Mode and DB is empty
-        if (!process.env.MONGO_URI) {
-            const Product = require('./src/models/product.model');
-            const count = await Product.countDocuments();
-            if (count === 0) {
-                console.log('Database is empty, starting auto-seeding...');
-                const seedData = require('./seed_extended');
-                await seedData(mongoUri);
-            }
-        }
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);

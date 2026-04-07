@@ -4,15 +4,15 @@ const bcrypt = require('bcryptjs');
 
 dotenv.config();
 
-const Role = require('./src/models/role.model');
-const Brand = require('./src/models/brand.model');
-const Category = require('./src/models/category.model');
-const Product = require('./src/models/product.model');
-const User = require('./src/models/user.model');
-const Cart = require('./src/models/cart.model');
-const CartItem = require('./src/models/cartItem.model');
-const Order = require('./src/models/order.model');
-const OrderItem = require('./src/models/orderItem.model');
+const Role = require('./schemas/roles');
+const Brand = require('./schemas/brands');
+const Category = require('./schemas/categories');
+const Product = require('./schemas/products');
+const User = require('./schemas/users');
+const Cart = require('./schemas/carts');
+const CartItem = require('./schemas/cartItems');
+const Order = require('./schemas/orders');
+const OrderItem = require('./schemas/orderItems');
 
 const seedData = async () => {
     try {
