@@ -94,6 +94,26 @@ const AdminReviews = () => {
         <AdminLayout
             title="Quản lý Đánh giá"
             subtitle="Xem xét các bình luận và xoá những nội dung không phù hợp"
+            actions={
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('pdf')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">file_download</span>
+                        Xuất PDF
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('txt')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">description</span>
+                        Xuất TXT
+                    </button>
+                </div>
+            }
         >
             <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant/10 overflow-hidden shadow-sm">
                 <div className="px-6 py-5 border-b border-surface-container-high/80 flex items-center justify-between gap-4">

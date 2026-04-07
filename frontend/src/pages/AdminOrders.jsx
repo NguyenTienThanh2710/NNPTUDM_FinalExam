@@ -250,6 +250,26 @@ const AdminOrders = () => {
     return (
         <AdminLayout
             title="Quản lý Đơn hàng"
+            actions={
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('pdf')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">file_download</span>
+                        Xuất PDF
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExportReport('txt')}
+                        className="flex items-center gap-2 bg-surface-container-high px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-variant transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">description</span>
+                        Xuất TXT
+                    </button>
+                </div>
+            }
         >
             {notice && (
                 <div className={`mb-6 rounded-xl px-4 py-3 border ${notice.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notice.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'}`}>

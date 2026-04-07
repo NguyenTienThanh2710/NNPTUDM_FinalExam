@@ -250,7 +250,7 @@ const AdminDashboard = () => {
                     <p className="text-xs font-black text-outline uppercase tracking-widest">Khách hàng HĐ</p>
                     <h3 className="text-2xl font-black mt-2 text-on-surface">{(stats?.activeCustomers || 0).toLocaleString()}</h3>
                     <div className="flex -space-x-2 mt-4">
-                        {(stats?.recentActiveUsers || []).map((u, i) => (
+                        {(stats?.recentActiveUsers || []).map((u) => (
                             <div key={u._id} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden" title={u.name}>
                                 {u.avatar ? (
                                     <img src={getImageURL(u.avatar)} className="w-full h-full object-cover" />
